@@ -1,5 +1,5 @@
 # 使用 Maven 官方镜像构建应用
-FROM maven:latest AS build
+FROM maven:3.8.6-openjdk-11-slim AS build
 
 # 设置工作目录
 WORKDIR /app
@@ -14,7 +14,7 @@ WORKDIR ./kit-app
 RUN mvn clean package -DskipTests
 
 # 使用 OpenJDK 官方镜像运行应用
-FROM openjdk:17-jdk-slim
+FROM openjdk:11.0.14.1-jre-slim
 
 WORKDIR /app
 
