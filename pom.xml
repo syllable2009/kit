@@ -16,6 +16,7 @@
     <modules>
         <!--		<module>kit-all</module>-->
         <module>kit-dictionary</module>
+        <module>kit-app</module>
     </modules>
 
     <properties>
@@ -26,6 +27,7 @@
         <compile.version>8</compile.version>
         <junit.version>5.10.3</junit.version>
         <lombok.version>1.18.34</lombok.version>
+        <spring-boot-parent.version>2.7.18</spring-boot-parent.version>
     </properties>
 
     <dependencies>
@@ -58,6 +60,19 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <!-- 引入Spring Boot的依赖管理 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <version>${spring-boot-parent.version}</version> <!-- 使用你所需的Spring Boot版本 -->
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-ui</artifactId>
+                <version>1.8.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
