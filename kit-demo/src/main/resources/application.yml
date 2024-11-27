@@ -1,14 +1,14 @@
 server:
   port: 8080
   servlet:
-    context-path: /app/api
+    context-path: /demo/api
 spring:
   profiles:
     active: dev
 custom:
   log:
     pattern: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{90} - %msg%n"
-    dir: kit-app
+    dir: demo-app
 
 logging:
   level:

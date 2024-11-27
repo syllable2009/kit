@@ -17,6 +17,7 @@
         <!--		<module>kit-all</module>-->
         <module>kit-dictionary</module>
         <module>kit-app</module>
+        <module>kit-demo</module>
     </modules>
 
     <properties>
