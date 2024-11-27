@@ -14,7 +14,7 @@ WORKDIR ./kit-app
 RUN mvn clean package -DskipTests
 
 # 使用 OpenJDK 官方镜像运行应用
-FROM openjdk:11.0.14.1-jre-slim
+FROM openjdk:11-jre-slim
 
 WORKDIR /app
 
