@@ -14,10 +14,12 @@
     <url>https://github.com/syllable2009/kit</url>
 
     <modules>
-        <!--		<module>kit-all</module>-->
+        <module>kit-all</module>
         <module>kit-dictionary</module>
         <module>kit-app</module>
         <module>kit-demo</module>
+        <module>kit-core</module>
+        <module>kit-hello</module>
     </modules>
 
     <properties>
