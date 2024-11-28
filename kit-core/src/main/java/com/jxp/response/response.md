@@ -1,1 +1,2 @@
-通用返回，区别于springboot自带的i18n
+通用返回，区别于springboot自带的i18n，可返回中英文。
+结合exception返回更佳。

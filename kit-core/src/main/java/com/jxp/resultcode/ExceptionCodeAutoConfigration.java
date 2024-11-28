@@ -1,4 +1,4 @@
-package com.jxp.exception;
+package com.jxp.resultcode;
 
 import java.util.Arrays;
 
@@ -29,7 +29,7 @@ public class ExceptionCodeAutoConfigration implements ApplicationContextAware {
                             .filter(f -> f.isAnnotationPresent(IExceptionCode.class))
                             .forEach(f -> {
                                 IExceptionCode a = f.getAnnotation(IExceptionCode.class);
-                                ErrorCode.CODE_MAP.put(a.code(), new ErrorCode(a.code(), a.zhCN(), a.enUS()));
+                                ResultCode.CODE_MAP.put(a.code(), new ResultCode(a.code(), a.zhCN(), a.enUS()));
                             });
                 });
     }

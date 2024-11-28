@@ -1,4 +1,4 @@
-package com.jxp.exception;
+package com.jxp.resultcode;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
