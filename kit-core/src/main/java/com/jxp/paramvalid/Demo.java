@@ -28,27 +28,30 @@ public class Demo {
     static class LengthValidation<T> implements Validation<T> {
 
         @Override
-        public ValidationResult validate(T s) {
-            return ValidationResult.<String>builder()
-                    .param("参数不能为空")
+        public ValidationResult<T> validate(T s) {
+            return ValidationResult.<T>builder()
+                    .param(s)
+                    .ifValid(true)
                     .build();
         }
     }
 
     static class FomatValidation<T> implements Validation<T> {
         @Override
-        public ValidationResult validate(T s) {
-            return ValidationResult.<String>builder()
-                    .param("格式化失败")
+        public ValidationResult<T> validate(T s) {
+            return ValidationResult.<T>builder()
+                    .param(s)
+                    .ifValid(true)
                     .build();
         }
     }
 
     static class ConvertValidation<T> implements Validation<T> {
         @Override
-        public ValidationResult validate(T s) {
-            return ValidationResult.<String>builder()
-                    .param("转化为数字失败")
+        public ValidationResult<T> validate(T s) {
+            return ValidationResult.<T>builder()
+                    .param(s)
+                    .ifValid(true)
                     .build();
         }
     }

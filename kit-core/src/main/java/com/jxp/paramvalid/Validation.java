@@ -6,5 +6,5 @@ package com.jxp.paramvalid;
  */
 
 public interface Validation<T> {
-    ValidationResult validate(T t);
+    ValidationResult<T> validate(T t);
 }
