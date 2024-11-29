@@ -36,10 +36,10 @@ public class AuthPermissionInterceptor extends HandlerInterceptorAdapter {
         if (!(handler instanceof HandlerMethod)) {
             return true;
         }
-        if (isAllowAnonymous(handler)) {
-            setErrorResponse(response, CommonResultCode.NO_LOGIN);
-            return false;
-        }
+//        if (isAllowAnonymous(handler)) {
+//            setErrorResponse(response, CommonResultCode.NO_LOGIN);
+//            return false;
+//        }
         return true;
     }
 
