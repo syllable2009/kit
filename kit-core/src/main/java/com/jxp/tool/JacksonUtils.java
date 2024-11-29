@@ -58,11 +58,15 @@ public class JacksonUtils {
     }
 
     public static String toJsonStr(Object obj) {
+        if (obj instanceof String) {
+            return String.valueOf(obj);
+        }
         try {
             return MAPPER.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            log.error("toJsonStr fail, obj:{}", obj);
         }
+        return String.valueOf(obj);
     }
 
     public static <T> List<T> toList(String string, TypeReference<List<T>> typeReference) {

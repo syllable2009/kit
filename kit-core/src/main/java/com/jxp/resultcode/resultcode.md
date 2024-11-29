@@ -6,3 +6,4 @@ error-code-extension:
 在spring管理的类和属性上标记注解IExceptionCode即可。
 
 使用： ResultCode.of(0);
+配合response使用。

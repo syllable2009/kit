@@ -20,9 +20,12 @@ public class RequestContext {
     public static Long getRequestTimestamp() {
         Context requestContext = getRequestContext();
         if (null != requestContext) {
-            return requestContext.getRequestTimestamp();
+            final Long requestTimestamp = requestContext.getRequestTimestamp();
+            if (null == requestTimestamp){
+                return System.currentTimeMillis();
+            }
         }
-        return 0L;
+        return System.currentTimeMillis();
     }
 
     public static Context getRequestContext() {

@@ -7,6 +7,7 @@ import java.lang.annotation.Annotation;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -23,6 +24,8 @@ import lombok.extern.slf4j.Slf4j;
  * @author jiaxiaopeng
  * Created on 2024-11-29 15:07
  */
+
+@Order(FilterOrder.FOUR)
 @Component
 @Slf4j
 public class AuthPermissionInterceptor extends HandlerInterceptorAdapter {

@@ -88,7 +88,6 @@ public class IdentifyFilter extends OncePerRequestFilter {
             if (null != context) {
                 RequestContext.setRequestContext(context);
                 filterChain.doFilter(request, response);
-                RequestContext.clear();
                 log.info("IdentifyFilter end");
                 return;
             }
@@ -98,7 +97,6 @@ public class IdentifyFilter extends OncePerRequestFilter {
         if (null != context) {
             RequestContext.setRequestContext(context);
             filterChain.doFilter(request, response);
-            RequestContext.clear();
             log.info("IdentifyFilter end");
             return;
         }
@@ -108,7 +106,6 @@ public class IdentifyFilter extends OncePerRequestFilter {
         if (null != context) {
             RequestContext.setRequestContext(context);
             filterChain.doFilter(request, response);
-            RequestContext.clear();
             log.info("IdentifyFilter end");
             return;
         }
@@ -117,7 +114,6 @@ public class IdentifyFilter extends OncePerRequestFilter {
         context = buildUnkownContext(request);
         RequestContext.setRequestContext(context);
         filterChain.doFilter(request, response);
-        RequestContext.clear();
         log.info("IdentifyFilter end");
     }
 

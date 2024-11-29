@@ -8,7 +8,6 @@ import javax.annotation.Resource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -22,8 +21,6 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    //    @Resource
-//    private AccessLogInterceptor accessLogInterceptor;
     @Resource
     private IdentifyInterceptor identifyInterceptor;
     @Resource
@@ -74,18 +71,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-//        registry.addInterceptor(accessLogInterceptor)
-//                .order(Ordered.HIGHEST_PRECEDENCE)
-//                .addPathPatterns("/**")
-//                .excludePathPatterns(EXCLUDE_PATH_PATTERNS);
 
         registry.addInterceptor(identifyInterceptor)
-                .order(Ordered.HIGHEST_PRECEDENCE + 1)
+                .order(FilterOrder.TWO)
                 .addPathPatterns("/**")
                 .excludePathPatterns(EXCLUDE_PATH_PATTERNS);
 
         registry.addInterceptor(authPermissionInterceptor)
-                .order(Ordered.HIGHEST_PRECEDENCE + 2)
+                .order(FilterOrder.FOUR)
                 .addPathPatterns("/**")
                 .excludePathPatterns(EXCLUDE_PATH_PATTERNS);
     }
@@ -101,4 +94,5 @@ public class WebConfig implements WebMvcConfigurer {
 //        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1); // 设置优先级
 //        return registrationBean;
 //    }
+
 }

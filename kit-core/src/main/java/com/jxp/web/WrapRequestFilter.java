@@ -8,7 +8,6 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -26,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-@Order(Ordered.HIGHEST_PRECEDENCE + 1)
+@Order(FilterOrder.ONE)
 @WebFilter(urlPatterns = "/*", filterName = "wrapRequestFilter")
 @Component
 public class WrapRequestFilter extends OncePerRequestFilter {
@@ -34,7 +33,7 @@ public class WrapRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-//        log.info("WrapRequestFilter");
+        log.info("WrapRequestFilter start");
         response.setHeader("Trace-Id", IdUtil.fastUUID());
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
         if (isFileUpload(request)) {
@@ -44,6 +43,7 @@ public class WrapRequestFilter extends OncePerRequestFilter {
             filterChain.doFilter(wrappedRequest, wrappedResponse);
         }
         wrappedResponse.copyBodyToResponse();
+        log.info("WrapRequestFilter end");
     }
 
     private boolean isFileUpload(HttpServletRequest request) {

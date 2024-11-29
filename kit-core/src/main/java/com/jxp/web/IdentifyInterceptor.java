@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -32,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  * Created on 2023-06-28 11:40
  * 和IdentifyFilter效果一样，二选一
  */
+@Order(FilterOrder.TWO)
 @Component
 @Slf4j
 public class IdentifyInterceptor extends HandlerInterceptorAdapter {
@@ -198,7 +200,6 @@ public class IdentifyInterceptor extends HandlerInterceptorAdapter {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         super.afterCompletion(request, response, handler, ex);
-        RequestContext.clear();
         log.info("IdentifyInterceptor end");
     }
 }
