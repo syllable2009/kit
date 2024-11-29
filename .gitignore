@@ -76,5 +76,6 @@ Thumbs.db
 
 ### log ###
 LOG_HOME_IS_UNDEFINED/
+log-demo/
 
 **/.flattened-pom.xml
