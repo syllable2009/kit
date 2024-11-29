@@ -32,7 +32,6 @@ public class AuthPermissionInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        log.info("AuthPermissionInterceptor start");
         super.preHandle(request, response, handler);
         if (!(handler instanceof HandlerMethod)) {
             return true;
@@ -47,7 +46,6 @@ public class AuthPermissionInterceptor extends HandlerInterceptorAdapter {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         super.afterCompletion(request, response, handler, ex);
-        log.info("AuthPermissionInterceptor end");
     }
 
     private boolean isAllowAnonymous(Object handler) {

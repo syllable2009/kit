@@ -33,7 +33,6 @@ public class WrapRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        log.info("WrapRequestFilter start");
         response.setHeader("Trace-Id", IdUtil.fastUUID());
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
         if (isFileUpload(request)) {
@@ -43,7 +42,6 @@ public class WrapRequestFilter extends OncePerRequestFilter {
             filterChain.doFilter(wrappedRequest, wrappedResponse);
         }
         wrappedResponse.copyBodyToResponse();
-        log.info("WrapRequestFilter end");
     }
 
     private boolean isFileUpload(HttpServletRequest request) {

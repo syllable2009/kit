@@ -82,7 +82,6 @@ public class AccessLogFilter extends OncePerRequestFilter {
             if (RequestMethod.HEAD.name().equals(request.getMethod())) {
                 return;
             }
-            log.info("AccessLogFilter");
             // request log
             String requestBody = getRequestBody(request);
             String requestBodyLog = StrUtil.subWithLength(requestBody, 0, maxLogLength);

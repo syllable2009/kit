@@ -74,7 +74,6 @@ public class IdentifyInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        log.info("IdentifyInterceptor start");
         super.preHandle(request, response, handler);
         if (!(handler instanceof HandlerMethod)) {
             return true;
@@ -135,7 +134,7 @@ public class IdentifyInterceptor extends HandlerInterceptorAdapter {
         }
         // rpc校验换取token并缓存
         return Context.builder()
-                .userId("admin")
+                .userId("user")
                 .anonymous(false)
                 .requestTimestamp(System.currentTimeMillis())
                 .language(getLanguage(request))
@@ -200,6 +199,5 @@ public class IdentifyInterceptor extends HandlerInterceptorAdapter {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         super.afterCompletion(request, response, handler, ex);
-        log.info("IdentifyInterceptor end");
     }
 }
