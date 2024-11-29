@@ -21,8 +21,8 @@ public class App {
         SpringApplication.run(App.class, args);
     }
 
-    @GetMapping(value = {"/", "/health"})
     @AllowAnonymous
+    @GetMapping(value = {"/", "/health"})
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("ok");
     }

@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class ValidationExcutor<T> {
-    private List<Validation<T>> stepList = new ArrayList<>();
+    private List<Validation<T>> stepList = new ArrayList<Validation<T>>();
 
     public ValidationExcutor addValidation(Validation<T> next) {
         stepList.add(next);

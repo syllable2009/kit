@@ -9,6 +9,7 @@
     </parent>
 
     <artifactId>kit-core</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>kit-core</name>
@@ -84,7 +85,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>8.5.34</version>
+            <version>9.0.83</version>
             <scope>compile</scope>
         </dependency>
 
