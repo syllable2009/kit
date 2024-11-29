@@ -1,4 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.jxp.event.configration.ProducerAutoConfiguration,\
-  com.jxp.event.configration.ConsumerAutoConfiguration
+  com.jxp.resultcode.ResultCodeAutoConfigration
   

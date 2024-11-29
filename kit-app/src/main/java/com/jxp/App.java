@@ -6,6 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jxp.web.AllowAnonymous;
+import com.jxp.web.Context;
+import com.jxp.web.RequestContext;
+
 /**
  * Hello world!
  *
@@ -17,8 +21,15 @@ public class App {
         SpringApplication.run(App.class, args);
     }
 
+    @AllowAnonymous
     @GetMapping(value = {"/", "/health"})
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("ok");
+    }
+
+    @AllowAnonymous
+    @GetMapping(value = "/me")
+    public ResponseEntity<Context> me() {
+        return ResponseEntity.ok(RequestContext.getRequestContext());
     }
 }

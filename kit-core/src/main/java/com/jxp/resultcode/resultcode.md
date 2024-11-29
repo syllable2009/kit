@@ -1,5 +1,4 @@
-
-自动装配CommonExceptionCode中定义的错误双语对象。
+自动装配IExceptionCode修饰中定义的错误双语对象。
 如果springboot需要扩展，可以开启自动注入。
 error-code-extension:
     enable: true

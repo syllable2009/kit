@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Configuration
 @ConditionalOnProperty(prefix = "error-code-extension", name = "enable", havingValue = "true")
-public class ExceptionCodeAutoConfigration implements ApplicationContextAware {
+public class ResultCodeAutoConfigration implements ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         final String[] beanNamesForType = applicationContext.getBeanNamesForType(IExceptionCode.class);

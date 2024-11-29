@@ -20,6 +20,8 @@ public enum CommonResultCode {
 
     OK(0, "成功", "success"),
     FAIL(-1, "失败", "fail"),
+    NO_LOGIN(401,"未登录","not login"),
+    NO_AUTH(403,"无权限","no permission"),
     ;
 
     private final Integer code;
