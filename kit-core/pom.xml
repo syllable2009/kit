@@ -134,9 +134,16 @@
             <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>3.8.0</version> <!-- 请根据需要选择版本 -->
         </dependency>
     </dependencies>
 
