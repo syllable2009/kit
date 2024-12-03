@@ -18,7 +18,7 @@ springdoc:
     enabled: true
 
 jedis:
-  enable: true
+  enable: false
 
 logging:
   level:
