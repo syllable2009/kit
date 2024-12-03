@@ -1,0 +1,22 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /core/api
+spring:
+  profiles:
+    active: dev
+custom:
+  log:
+    pattern: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{90} - %msg%n"
+    dir: kit-core
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+logging:
+  level:
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
