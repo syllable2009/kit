@@ -8,6 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,8 +32,9 @@ public class LongPoolApi {
     // 存放监听某个Id的长轮询集合
     public static Map<String, CopyOnWriteArrayList<DeferredResult<Result<String>>>> watchRequests = new ConcurrentHashMap<>();
 
+    @ResponseBody
     @GetMapping("/getData")
-    public ResponseEntity<?> getData(@RequestParam("postId") String postId) {
+    public ResponseEntity<CopyOnWriteArrayList<DeferredResult<Result<String>>>> getData(@RequestParam("postId") String postId) {
         return ResponseEntity.ok(getDeferredResults(postId));
     }
 
@@ -41,6 +43,9 @@ public class LongPoolApi {
     @GetMapping("/long-poll")
     public DeferredResult<Result<String>> longPoll(@RequestParam("postId") String postId,
             HttpServletResponse response) throws InterruptedException {
+        response.setStatus(HttpStatus.OK.value());
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json;charset=utf-8");
         // 创建 DeferredResult 对象，设置超时时间为 30 秒
         DeferredResult<Result<String>> deferredResult = new DeferredResult<>(30000L);
         // 将 DeferredResult 存储在 Map 中，避免在并发环境中出现多个线程尝试同时创建相同键的情况
@@ -63,6 +68,7 @@ public class LongPoolApi {
         return deferredResult;
     }
 
+    @ResponseBody
     @GetMapping("/send-notification")
     public ResponseEntity<Boolean> sendNotification(@RequestParam String postId,
             @RequestParam String message) {
