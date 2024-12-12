@@ -15,6 +15,7 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -34,14 +35,18 @@ public class WrapRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         response.setHeader("Trace-Id", IdUtil.fastUUID());
-        ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
+        // ContentCachingResponseWrapper 本身并不直接支持长连接Long Polling或WebSocket
         if (isFileUpload(request)) {
-            filterChain.doFilter(request, wrappedResponse);
-        } else {
+            filterChain.doFilter(request, response);
+        } else if (StrUtil.equals("/core/api/long-poll", request.getRequestURI())){
+            ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
+            filterChain.doFilter(wrappedRequest, response);
+        }else {
+            ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
             ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
             filterChain.doFilter(wrappedRequest, wrappedResponse);
+            wrappedResponse.copyBodyToResponse();
         }
-        wrappedResponse.copyBodyToResponse();
     }
 
     private boolean isFileUpload(HttpServletRequest request) {

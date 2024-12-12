@@ -50,7 +50,18 @@ public class AccessLogFilter extends OncePerRequestFilter {
                 return requestBody;
             }
         }
-        return null;
+        return "";
+    }
+
+    private String getResponseBody(HttpServletResponse response) {
+        if (response instanceof ContentCachingResponseWrapper) {
+            ContentCachingResponseWrapper wrappedResponse = (ContentCachingResponseWrapper) response;
+            final String str = StrUtil.str(wrappedResponse.getContentAsByteArray(), "UTF-8");
+            String responseBodyLog = StrUtil.subWithLength(str, 0,
+                    maxLogLength);
+            return responseBodyLog;
+        }
+        return "";
     }
 
     private String getRequestBody(ContentCachingRequestWrapper request) {
@@ -86,10 +97,7 @@ public class AccessLogFilter extends OncePerRequestFilter {
             String requestBody = getRequestBody(request);
             String requestBodyLog = StrUtil.subWithLength(requestBody, 0, maxLogLength);
             // response log
-            ContentCachingResponseWrapper wrappedResponse = (ContentCachingResponseWrapper) response;
-            final String str = StrUtil.str(wrappedResponse.getContentAsByteArray(), "UTF-8");
-            String responseBodyLog = StrUtil.subWithLength(str, 0,
-                    maxLogLength);
+            final String responseBodyLog = getResponseBody(response);
             // ext log
             // 获取上下文对象,里面包含一些额外信息，结合
             String userId = RequestContext.getUserId(); // 可从上下文中获取requestContextDto.getRequestTimestamp()
