@@ -1,10 +1,28 @@
 server:
   port: 8080
-  servlet:
-    context-path: /demo/api
+#  servlet:
+#    context-path: /demo/api
 spring:
   profiles:
     active: dev
+  datasource:
+    url: jdbc:mysql://localhost:3306/erupt?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: admin123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    generate-ddl: true
+    database: mysql
+
+  # 当 erupt.redisSession 为 true 时必须配置此项！
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+    timeout: 10000
+    password: admin1234
+
 custom:
   log:
     pattern: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{90} - %msg%n"
@@ -14,3 +32,63 @@ logging:
   level:
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
+
+
+erupt-app:
+  # 是否开启水印，1.12.0 及以上版本支持
+  water-mark: false
+  # 登录失败几次出现验证码，值为0时表示一直需要登录验证码
+  verify-code-count: 2
+  # 登录密码是否加密传输，特殊场景如：LDAP登录可关闭该功能获取密码明文
+  pwd-transfer-encrypt: true
+  # 是否开启密码重置功能，关闭后前端会屏蔽所有重置密码的入口适用于 ldap 等场景，1.12.7 及以上版本支持
+  reset-pwd: true
+  # 多语言配置
+  locales: [
+    "zh-CN",      # 简体中文
+    "zh-TW",      # 繁体中文
+    "en-US",      # English
+    "fr-FR",      # En français
+    "ja-JP",      # 日本語
+    "ko-KR",      # 한국어
+    "ru-RU",      # русск
+    "es-ES"       # español
+  ]
+  # 自定义登录页路径，1.10.6 及以上版本支持，支持http网络路径
+  # login-page-path: /customer-login.html
+
+erupt:
+  # 是否开启csrf防御
+  csrf-inspect: true
+  # 开启redis方式存储session，默认false，开启后需在配置文件中添加redis配置（同 Spring Boot）
+  redis-session: true
+  # redis session是否自动续期，1.10.8及以上版本支持
+  redis-session-refresh: true
+  # 附件上传存储路径, 默认路径为：/opt/erupt-attachment
+  upload-path: D:/erupt/pictures
+  # 是否保留上传文件原始名称
+  keep-upload-file-name: false
+  # 项目初始化方式，NONE 不执行初始化代码、EVERY 每次启动都进行初始化、FILE 通过标识文件判断是否需要初始化
+  init-method-enum: file
+  # 默认语言，1.12.3 及以上版本支持
+  default-locales: zh-CN
+  # 是否开启任务调度（导入erupt-job时有效）
+  job.enable: true
+  # 是否开启日志采集，开启后可在系统日志中查看实时日志 1.12.14 及以上版本支持
+  log-track: true
+  # 日志采集最大暂存行数 1.12.14 及以上版本支持
+  log-track-cache-size: 1000
+  # 是否记录操作日志，默认true，该功能开启后可在【系统管理 → 操作日志】中查看操作日志
+  security:
+    record-operate-log: true
+  upms:
+    # 登录 session 时长（redisSession为true时有效）
+    # redisSession 为 false 时控制有效期的方法：server.servlet.session.timeout
+    expire-time-by-login: 60
+    # 严格的角色菜单策略，如果非管理员用户拥有“角色管理权限”则仅能编辑已有权限的角色菜单
+    strict-role-menu-legal: true
+
+magic-api:
+  web: /demo/app
+  # 接口配置文件存放路径
+  resource.location: /Users/jiaxiaopeng/erupt/magic-script

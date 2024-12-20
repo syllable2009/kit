@@ -13,6 +13,9 @@
 
     <name>kit-demo</name>
     <url>http://maven.apache.org</url>
+    <properties>
+        <erupt.version>1.12.17</erupt.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -35,6 +38,51 @@
             <artifactId>springdoc-openapi-ui</artifactId>
         </dependency>
 
+        <!--后端权限逻辑-->
+        <dependency>
+            <groupId>xyz.erupt</groupId>
+            <artifactId>erupt-admin</artifactId>
+            <version>${erupt.version}</version>
+        </dependency>
+        <!--后台WEB界面，前后端分离场景，可不添加此依赖-->
+        <dependency>
+            <groupId>xyz.erupt</groupId>
+            <artifactId>erupt-web</artifactId>
+            <version>${erupt.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>xyz.erupt</groupId>
+            <artifactId>erupt-job</artifactId>
+            <version>${erupt.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>xyz.erupt</groupId>
+            <artifactId>erupt-generator</artifactId>
+            <version>${erupt.version}</version>
+        </dependency>
+
+        <!--服务器监控 erupt-monitor-->
+        <dependency>
+            <groupId>xyz.erupt</groupId>
+            <artifactId>erupt-monitor</artifactId>
+            <version>${erupt.version}</version>
+        </dependency>
+
+        <!--在线接口开发 erupt-magic-api-->
+        <dependency>
+            <groupId>xyz.erupt</groupId>
+            <artifactId>erupt-magic-api</artifactId>
+            <version>${erupt.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.30</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>

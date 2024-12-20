@@ -11,5 +11,12 @@ https://github.com/lyswhut/lx-music-desktop/releases
 
 # PotPlayer
 
+# vlc
+
 # ungoogled-chromium
 https://ungoogled-software.github.io/ungoogled-chromium-binaries/
+
+# 文件蜈蚣
+http://filecxx.com/zh_CN/index.html
+
+
