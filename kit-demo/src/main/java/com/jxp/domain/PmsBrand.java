@@ -42,6 +42,9 @@ public class PmsBrand {
 
     // extends BaseModel
     @Id
+    // @GeneratedValue(generator = "system-uuid")
+    // @GenericGenerator(name = "system-uuid", strategy = "uuid")
+    // @Column(name = "id", length = 32)
     @GeneratedValue(generator = "generator")
     @GenericGenerator(name = "generator", strategy = "native")
     @Column(name = "id")

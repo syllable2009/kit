@@ -2,6 +2,14 @@ server:
   port: 8080
 #  servlet:
 #    context-path: /demo/api
+  compression:
+    mime-types: application/javascript,text/css,application/json,application/xml,text/html,text/xml,text/plain
+    enabled: true
+  error:
+    includeException: true
+    includeStacktrace: ALWAYS
+    includeMessage: ALWAYS
+
 spring:
   profiles:
     active: dev
@@ -22,6 +30,11 @@ spring:
     database: 0
     timeout: 10000
     password: admin1234
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
 
 custom:
   log:
@@ -65,7 +78,7 @@ erupt:
   # redis session是否自动续期，1.10.8及以上版本支持
   redis-session-refresh: true
   # 附件上传存储路径, 默认路径为：/opt/erupt-attachment
-  upload-path: D:/erupt/pictures
+  upload-path: /Users/jiaxiaopeng/erupt/pictures
   # 是否保留上传文件原始名称
   keep-upload-file-name: false
   # 项目初始化方式，NONE 不执行初始化代码、EVERY 每次启动都进行初始化、FILE 通过标识文件判断是否需要初始化
