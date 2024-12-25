@@ -59,13 +59,13 @@ erupt-app:
   # 多语言配置
   locales: [
     "zh-CN",      # 简体中文
-    "zh-TW",      # 繁体中文
-    "en-US",      # English
-    "fr-FR",      # En français
-    "ja-JP",      # 日本語
-    "ko-KR",      # 한국어
-    "ru-RU",      # русск
-    "es-ES"       # español
+#    "zh-TW",      # 繁体中文
+#    "en-US",      # English
+#    "fr-FR",      # En français
+#    "ja-JP",      # 日本語
+#    "ko-KR",      # 한국어
+#    "ru-RU",      # русск
+#    "es-ES"       # español
   ]
   # 自定义登录页路径，1.10.6 及以上版本支持，支持http网络路径
   # login-page-path: /customer-login.html
@@ -80,7 +80,7 @@ erupt:
   # 附件上传存储路径, 默认路径为：/opt/erupt-attachment
   upload-path: /Users/jiaxiaopeng/erupt/pictures
   # 是否保留上传文件原始名称
-  keep-upload-file-name: false
+  keep-upload-file-name: true
   # 项目初始化方式，NONE 不执行初始化代码、EVERY 每次启动都进行初始化、FILE 通过标识文件判断是否需要初始化
   init-method-enum: file
   # 默认语言，1.12.3 及以上版本支持
