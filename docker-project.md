@@ -64,4 +64,7 @@ docker run -d \
 --restart unless-stopped \
 suwmlee/ikaros:lates
 
+# Erupt
+https://www.erupt.xyz/#!/doc
+
 
