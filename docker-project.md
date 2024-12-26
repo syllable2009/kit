@@ -67,4 +67,26 @@ suwmlee/ikaros:lates
 # Erupt
 https://www.erupt.xyz/#!/doc
 
+# kkFileView是一个万能的在线预览开源项目
 
+# MinIO
+
+# r-nacos是一款使用rust实现的nacos服务
+https://github.com/nacos-group/r-nacos
+
+docker run --name mynacos -v /Users/jiaxiaopeng/docker/rnacos/config:/io:rw -p 8848:8848 -p 9848:9848 -p 10848:10848 -d qingpan/rnacos:stable
+
+# nginx
+docker cp nginx:/etc/nginx/nginx.conf /Users/jiaxiaopeng/docker/nginx/nginx.conf
+docker cp nginx:/etc/nginx/conf.d /Users/jiaxiaopeng/docker/nginx/conf.d
+docker cp nginx:/usr/share/nginx/html /Users/jiaxiaopeng/docker/nginx/html
+docker rm -f nginx
+
+docker run --name nginx -m 200m -p 80:80 \
+-v /Users/jiaxiaopeng/docker/nginx/nginx.conf:/etc/nginx/nginx.conf \
+-v /Users/jiaxiaopeng/docker/nginx/conf.d:/etc/nginx/conf.d \
+-v /Users/jiaxiaopeng/docker/nginx/html:/usr/share/nginx/html \
+-v /Users/jiaxiaopeng/docker/nginx/log:/var/log/nginx \
+-e TZ=Asia/Shanghai \
+--restart=always \
+--privileged=true -d nginx
