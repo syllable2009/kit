@@ -34,3 +34,6 @@ https://github.com/alyssaxuu/screenity
 # videoduplicatefinder 视频重复查找器
 https://github.com/0x90d/videoduplicatefinder
 
+# OrbStack 替代docker desktop的mac软件
+
+

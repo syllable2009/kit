@@ -34,3 +34,17 @@ _source：文档的原始 JSON 内容
 }
 }
 }
+
+interface Query
+abstract class BaseQuery
+# CriteriaQuery：CriteriaQuery 是基于 Criteria API 的查询构建方式。
+CriteriaQuery criteriaQuery = new CriteriaQuery(new Criteria("field").is("value"));
+# NativeQuery：‌NativeQuery 是一种用于执行原生 Elasticsearch 查询的方式。
+NativeQuery nativeQuery = new NativeQuery("{\"query\": {\"match\": {\"field\": \"value\"}}}");
+# StringQuery：StringQuery 是用于执行字符串形式的查询。
+StringQuery stringQuery = new StringQuery("{\"query\": {\"match\": {\"field\": \"value\"}}}");
+# NativeSearchQuery：‌NativeSearchQuery‌是通过Spring Data Elasticsearch提供的NativeSearchQuery类来构建查询。
+NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+.withQuery(QueryBuilders.matchQuery("field", "value"))
+.withPageable(PageRequest.of(0, 10))
+.build();
