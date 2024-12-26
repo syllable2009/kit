@@ -5,6 +5,8 @@ server:
 spring:
   profiles:
     active: dev
+  elasticsearch:
+    uris: http://localhost:9200
 custom:
   log:
     pattern: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{90} - %msg%n"
@@ -23,3 +25,5 @@ jedis:
 logging:
   level:
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    # 输出es的查询参数(调试用)
+    tracer: TRACE
