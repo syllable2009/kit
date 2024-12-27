@@ -74,7 +74,10 @@ https://www.erupt.xyz/#!/doc
 # r-nacos是一款使用rust实现的nacos服务
 https://github.com/nacos-group/r-nacos
 
-docker run --name mynacos -v /Users/jiaxiaopeng/docker/rnacos/config:/io:rw -p 8848:8848 -p 9848:9848 -p 10848:10848 -d qingpan/rnacos:stable
+docker run --name mynacos -e RNACOS_CONSOLE_ENABLE_CAPTCHA=false \
+-e RNACOS_ENABLE_NO_AUTH_CONSOLE=true \
+-v /Users/jiaxiaopeng/docker/rnacos/config:/io:rw \
+-p 8848:8848 -p 9848:9848 -p 10848:10848 -d qingpan/rnacos:stable
 
 # nginx
 docker cp nginx:/etc/nginx/nginx.conf /Users/jiaxiaopeng/docker/nginx/nginx.conf

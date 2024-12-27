@@ -9,6 +9,14 @@ spring:
     uris: http://localhost:9200
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
+  cloud:
+    nacos:
+      config:
+        server-addr: http://127.0.0.1:8848
+      discovery:
+        server-addr: http://127.0.0.1:8848
+      server-addr: http://127.0.0.1:8848
+
 custom:
   log:
     pattern: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{90} - %msg%n"
