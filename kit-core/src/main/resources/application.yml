@@ -13,9 +13,12 @@ spring:
     nacos:
       config:
         server-addr: http://127.0.0.1:8848
+        namespace: ee
+        group: DEFAULT_GROUP
       discovery:
         server-addr: http://127.0.0.1:8848
-      server-addr: http://127.0.0.1:8848
+  application:
+    name: core
 
 custom:
   log:
