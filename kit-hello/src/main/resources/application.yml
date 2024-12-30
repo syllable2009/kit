@@ -1,3 +1,4 @@
 demo:
   starter:
+    enable: true
     name: 9999
