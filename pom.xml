@@ -194,6 +194,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!--一款轻量级的规则引擎脚本AviatorScript-->
+            <dependency>
+                <groupId>com.googlecode.aviator</groupId>
+                <artifactId>aviator</artifactId>
+                <version>5.4.3</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
