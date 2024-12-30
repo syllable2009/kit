@@ -1,10 +1,14 @@
 package com.jxp;
 
+import javax.annotation.Resource;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.jxp.service.DemoService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,8 +25,12 @@ public class HelloApplication {
         SpringApplication.run(HelloApplication.class, args);
     }
 
+    @Resource
+    private DemoService demoService;
+
     @GetMapping(value = {"/", "/health"})
     public ResponseEntity<String> health() {
-        return ResponseEntity.ok("ok");
+        final String s = demoService.sayHello();
+        return ResponseEntity.ok(s);
     }
 }
