@@ -15,11 +15,30 @@ docker run -d --restart=always \
 
 # 1panel
 https://1panel.cn/docs/installation/online_installation/
+docker run -d \
+--name 1panel \
+-p 10086:10086 \
+--restart always \
+--network host \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v /Users/jxp/docker/debian/volumes:/var/lib/docker/volumes \
+-v /Users/jxp/docker/debian/opt:/opt \
+-v /Users/jxp/docker/debian/root:/root \
+-v /Users/jxp/docker/debian/home:/home \
+-v /Users/jxp/docker/debian/var:/var \
+-e TZ=Asia/Shanghai \
+moelin/1panel:latest
+
+http://jxp:10086/entrance
+
 
 # nascab
 https://hub.docker.com/r/ypptec/nascab
-docker run -v /docker/myData:/myData -v /docker/nascabData:/root/.local/share/nascab \
--p 8888:80 -d --log-opt max-size=10m --log-opt max-file=3 ypptec/nascab
+docker run -v /Users/jxp/docker/nascabData:/root/.local/share/nascab \
+-v /mnt:/mnt \
+-v /media:/media \
+-v /Volumes:/Volumes \
+-p 8888:80 -d --log-opt max-size=10m --log-opt max-file=3 ypptec/nascab:3.5.3-arm64
 
 # emby 开心特别版
 https://hub.docker.com/r/lovechen/embyserver
@@ -41,6 +60,17 @@ redis:7.2.6 --requirepass 密码
 docker exec -it redis redis-cli -a 密码
 
 # mysql
+
+docker run --name mysql8 -v /Users/jxp/docker/mysql8/conf:/etc/mysql/conf.d \
+-v /Users/jxp/docker/mysql8/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=admin123456 -p 3306:3306 -d 
+mysql:8
+
+CREATE USER 'root'@'%' IDENTIFIED BY 'admin123456'; 创建一个新的 root 用户
+ALTER USER 'root'@'%' IDENTIFIED BY 'admin123456';           -- 修改任何 IP 用户的密码
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;           -- 任何 IP
+FLUSH PRIVILEGES;  -- 刷新权限
+
+CREATE DATABASE erupt CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 # javaSP java刮削
 https://github.com/Yuukiy/JavSP.git
@@ -76,20 +106,20 @@ https://github.com/nacos-group/r-nacos
 
 docker run --name mynacos -e RNACOS_CONSOLE_ENABLE_CAPTCHA=false \
 -e RNACOS_ENABLE_NO_AUTH_CONSOLE=true \
--v /Users/jiaxiaopeng/docker/rnacos/config:/io:rw \
+-v /Users/jxp/docker/rnacos/config:/io:rw \
 -p 8848:8848 -p 9848:9848 -p 10848:10848 -d qingpan/rnacos:stable
 
 # nginx
-docker cp nginx:/etc/nginx/nginx.conf /Users/jiaxiaopeng/docker/nginx/nginx.conf
-docker cp nginx:/etc/nginx/conf.d /Users/jiaxiaopeng/docker/nginx/conf.d
-docker cp nginx:/usr/share/nginx/html /Users/jiaxiaopeng/docker/nginx/html
+docker cp nginx:/etc/nginx/nginx.conf /Users/jxp/docker/nginx/nginx.conf
+docker cp nginx:/etc/nginx/conf.d /Users/jxp/docker/nginx/conf.d
+docker cp nginx:/usr/share/nginx/html /Users/jxp/docker/nginx/html
 docker rm -f nginx
 
 docker run --name nginx -m 200m -p 80:80 \
--v /Users/jiaxiaopeng/docker/nginx/nginx.conf:/etc/nginx/nginx.conf \
--v /Users/jiaxiaopeng/docker/nginx/conf.d:/etc/nginx/conf.d \
--v /Users/jiaxiaopeng/docker/nginx/html:/usr/share/nginx/html \
--v /Users/jiaxiaopeng/docker/nginx/log:/var/log/nginx \
+-v /Users/jxp/docker/nginx/nginx.conf:/etc/nginx/nginx.conf \
+-v /Users/jxp/docker/nginx/conf.d:/etc/nginx/conf.d \
+-v /Users/jxp/docker/nginx/html:/usr/share/nginx/html \
+-v /Users/jxp/docker/nginx/log:/var/log/nginx \
 -e TZ=Asia/Shanghai \
 --restart=always \
 --privileged=true -d nginx
@@ -99,3 +129,22 @@ docker run --name nginx -m 200m -p 80:80 \
 LiteFlow是一个轻量且强大的国产规则引擎框架
 # AviatorScript
 AviatorScript 是一门高性能、轻量级寄宿于 JVM （包括 Android 平台）之上的脚本语言。
+# radar开源的风控项目
+https://gitee.com/freshday/radar
+
+
+# 1panel
+docker run -d \
+--name 1panel \
+-p 10086:10086 \
+--restart always \
+--network host \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v /Users/jxp/docker/1panel/volumes:/var/lib/docker/volumes \
+-v /Users/jxp/docker/1panel/opt:/opt \
+-v /Users/jxp/docker/1panel/root:/root \
+-v /Users/jxp/docker/1panel/home:/home \
+-e TZ=Asia/Shanghai \
+moelin/1panel:latest
+
+http://jxp:10086/entrance
