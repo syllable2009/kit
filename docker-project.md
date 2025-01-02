@@ -34,11 +34,14 @@ http://jxp:10086/entrance
 
 # nascab
 https://hub.docker.com/r/ypptec/nascab
-docker run -v /Users/jxp/docker/nascabData:/root/.local/share/nascab \
+docker run -v /Users/jiaxiaopeng/docker/nascabData:/root/.local/share/nascab \
+-p 8888:80 -p 5555:90 \
+--name nascab \
+--network host \
 -v /mnt:/mnt \
 -v /media:/media \
 -v /Volumes:/Volumes \
--p 8888:80 -d --log-opt max-size=10m --log-opt max-file=3 ypptec/nascab:3.5.3-arm64
+-d --log-opt max-size=10m --log-opt max-file=3 ypptec/nascab:3.5.3-arm64
 
 # emby 开心特别版
 https://hub.docker.com/r/lovechen/embyserver
@@ -148,3 +151,17 @@ docker run -d \
 moelin/1panel:latest
 
 http://jxp:10086/entrance
+
+# LocalSend
+LocalSend 是一个自由、开源的应用程序，允许你在本地网络上安全地与附近设备分享文件和消息，无需互联网连接。
+https://github.com/localsend/localsend
+
+# input-leap
+Input Leap 是一款模拟 KVM 切换器功能的软件，从历史上看，KVM 切换器允许您使用单个键盘和鼠标来控制多台计算机。
+所有共享键盘和鼠标的机器上都需要安装 Input Leap。
+https://github.com/input-leap/input-leap
+
+# memos
+一款清爽的轻量级备忘录中心。
+https://github.com/usememos/memos
+docker run -d --name memos -p 5230:5230 -v /Users/jiaxiaopeng/docker/memos/:/var/opt/memos neosmemo/memos:stable
