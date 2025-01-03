@@ -176,8 +176,9 @@ https://github.com/usememos/memos
 docker run -d --name memos -p 5230:5230 -v /Users/jiaxiaopeng/docker/memos/:/var/opt/memos neosmemo/memos:stable
 
 # Melody
-音乐精灵，旨在帮助你更好地管理音乐。目前的主要能力是帮助你将喜欢的歌曲或者音频上传到音乐平台的云盘。
-docker run -d -p 5566:5566  -v ~/melody-profile:/app/backend/.profile foamzou/melody:latest
+网易云-音乐精灵，旨在帮助你更好地管理音乐。目前的主要能力是帮助你将喜欢的歌曲或者音频上传到音乐平台的云盘。
+docker run -d -p 5566:5566 --name melody -v /Users/jiaxiaopeng/Music:/Users/jiaxiaopeng/Music -v \
+/Users/jiaxiaopeng/docker/melody/melody-profile:/app/backend/.profile foamzou/melody:latest
 
 # music-tag-web
 https://github.com/xhongc/music-tag-web
@@ -185,3 +186,11 @@ docker run -d -p 8002:8002 -v /path/to/your/music:/app/media -v /path/to/your/co
 
 # Musicn：用于下载 mp3 音乐，方便用户获取所需音频文件
 https://github.com/zonemeen/musicn
+
+# Termux
+Termux 是一款Android 终端模拟器和 Linux 环境应用，无需 root 权限或设置即可直接使用
+https://termux.dev/en/
+
+# UserLAnd
+在 Android 上运行 Linux 发行版或应用程序的最简单方法。
+https://github.com/CypherpunkArmory/UserLAnd
