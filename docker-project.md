@@ -6,12 +6,23 @@ https://hub.docker.com/r/corentinth/it-tools
 docker run -d --name it-tools --restart unless-stopped -p 8800:80 corentinth/it-tools:latest
 
 # 阅读3网页版
+Reading：免费小说阅读 app，支持多种源与 TTS，提供多样阅读体验。
 https://hub.docker.com/r/hectorqin/reader
 开源项目：https://github.com/celetor/web-yuedu3
 docker run -d --restart=always \
 --name=reader -e "SPRING_PROFILES_ACTIVE=prod" \
 -v /docker/reader/logs:/logs -v /docker/reader/storage:/storage \
 -p 9800:8080 hectorqin/reader:3.2.11
+
+# Teemii
+Teemii：实现在线漫画下载与管理，满足漫画爱好者需求。
+git clone https://github.com/dokkaner/teemii.git
+cd ../server
+docker build -t teemii-backend .
+docker run -d --name teemii-backend --network teemii-network -v teemii-data:/app/data teemii-backend
+cd ../app
+docker build -t teemii-frontend .
+docker run -d -p 8080:80 --name teemii-frontend --network teemii-network teemii-frontend
 
 # 1panel
 https://1panel.cn/docs/installation/online_installation/
@@ -30,7 +41,6 @@ docker run -d \
 moelin/1panel:latest
 
 http://jxp:10086/entrance
-
 
 # nascab
 https://hub.docker.com/r/ypptec/nascab
@@ -63,7 +73,6 @@ redis:7.2.6 --requirepass 密码
 docker exec -it redis redis-cli -a 密码
 
 # mysql
-
 docker run --name mysql8 -v /Users/jxp/docker/mysql8/conf:/etc/mysql/conf.d \
 -v /Users/jxp/docker/mysql8/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=admin123456 -p 3306:3306 -d 
 mysql:8
@@ -165,3 +174,14 @@ https://github.com/input-leap/input-leap
 一款清爽的轻量级备忘录中心。
 https://github.com/usememos/memos
 docker run -d --name memos -p 5230:5230 -v /Users/jiaxiaopeng/docker/memos/:/var/opt/memos neosmemo/memos:stable
+
+# Melody
+音乐精灵，旨在帮助你更好地管理音乐。目前的主要能力是帮助你将喜欢的歌曲或者音频上传到音乐平台的云盘。
+docker run -d -p 5566:5566  -v ~/melody-profile:/app/backend/.profile foamzou/melody:latest
+
+# music-tag-web
+https://github.com/xhongc/music-tag-web
+docker run -d -p 8002:8002 -v /path/to/your/music:/app/media -v /path/to/your/config:/app/data --restart=always xhongc/music_tag_web:latest
+
+# Musicn：用于下载 mp3 音乐，方便用户获取所需音频文件
+https://github.com/zonemeen/musicn

@@ -36,4 +36,7 @@ https://github.com/0x90d/videoduplicatefinder
 
 # OrbStack 替代docker desktop的mac软件
 
+# 图压-简单易用的图片压缩软件
+
+#
 
