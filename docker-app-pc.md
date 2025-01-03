@@ -38,5 +38,10 @@ https://github.com/0x90d/videoduplicatefinder
 
 # 图压-简单易用的图片压缩软件
 
-#
+# HandBrake 是一个开源视频转码器
+https://github.com/HandBrake/HandBrake
+
+# LANDrop
+一款免费的跨平台局域网文件传输工具，适用于电脑与手机之间互传文件，比如 Mac 电脑与 Android 手机。
+
 

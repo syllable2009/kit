@@ -180,6 +180,9 @@ docker run -d --name memos -p 5230:5230 -v /Users/jiaxiaopeng/docker/memos/:/var
 docker run -d -p 5566:5566 --name melody -v /Users/jiaxiaopeng/Music:/Users/jiaxiaopeng/Music -v \
 /Users/jiaxiaopeng/docker/melody/melody-profile:/app/backend/.profile foamzou/melody:latest
 
+#  flomo浮墨笔记（Web、Android、iOS等）
+
+
 # music-tag-web
 https://github.com/xhongc/music-tag-web
 docker run -d -p 8002:8002 -v /path/to/your/music:/app/media -v /path/to/your/config:/app/data --restart=always xhongc/music_tag_web:latest
