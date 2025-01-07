@@ -9,5 +9,5 @@ import com.jxp.autoassign.Customer;
  * Created on 2025-01-06 16:04
  */
 public interface AssignStrategy {
-    Customer selectOne(List<Customer> CustomerList);
+    Customer selectOne(List<Customer> customerList);
 }

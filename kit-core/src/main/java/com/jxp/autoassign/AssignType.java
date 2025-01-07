@@ -34,4 +34,5 @@ public enum AssignType {
 
     private Integer code;
     private String name;
+
 }

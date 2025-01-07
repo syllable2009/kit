@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <!--定义相关变量-->
-    <property name="log.dir" value="/home/logs"/>
+    <property name="log.dir" value="kit-core"/>
     <property name="app.name" value="kit-core"/>
     <property name="custom.log.pattern"
               value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{90} - %msg%n"/>
@@ -17,13 +17,13 @@
     <!-- 文件输出 -->
     <appender name="APP_LOG"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${log.dir}/{app.name}/log_info.log</file>
+        <file>${log.dir}/log_info.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${custom.log.pattern}</pattern>
             <charset>UTF-8</charset>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${log.dir}/{app.name}/histroy/log-%d{yyyy-MM-dd}-%i.log
+            <fileNamePattern>${log.dir}/histroy/log-%d{yyyy-MM-dd}-%i.log
             </fileNamePattern>
             <maxHistory>30</maxHistory>
             <timeBasedFileNamingAndTriggeringPolicy

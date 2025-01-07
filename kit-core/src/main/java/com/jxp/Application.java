@@ -72,8 +72,8 @@ public class Application {
 
     private static String getLuaScript(String key, List<String> value) {
         String luaScript =
-                "redis.call('DEL', '{}') " +
-                        "redis.call('RPUSH', '{}', '{}')";
+                "redis.call('DEL', '{}') "
+                        + "redis.call('RPUSH', '{}', '{}')";
         return StrUtil.format(luaScript, key, key, Joiner.on("','").skipNulls().join(value));
     }
 }
