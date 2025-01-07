@@ -2,7 +2,7 @@
 <configuration>
 
     <!--定义相关变量-->
-    <property name="log.dir" value="log-demo"/>
+    <property name="log.dir" value="kit-app"/>
     <property name="custom.log.pattern"
               value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{90} - %msg%n"/>
 
