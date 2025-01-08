@@ -1,14 +1,22 @@
 package com.jxp.nserver;
 
+import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import cn.hutool.json.JSONUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -18,13 +26,27 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 在Netty中，一个请求会创建一个Channel通道，childHandler是具体处理请求的处理器。
  * 每个Channel只有一个ChannelPipeline。ChannelPipeline是ChannelHandler的容器，它负责ChannelHandler的管理和事件拦截。该pipeline在Channel被创建的时候创建。
  * ChannelPipeline包含了一个ChannelHander形成的列表，且所有ChannelHandler都会注册到ChannelPipeline中。Pipeline是一个双向链表结构。
  * Netty的ChannelPipeline和ChannelHandler机制类似于Servlet和Filter过滤器。
+ * HeadContext<=>InboundHandler1<=>InboundHandler2<=>InboundHandler3<=>OutboundHandler1
+ * <=>OutboundHandler2<=>OutboundHandler3<=>ExceptionHandler<=>TailContext
+ * 无论是inboundHandler或者是outboundHandler的异常还是write，都是按序向tail方向传递的。所以异常处理添加到tail方向的末尾。
+ *
+ *
  * @author jiaxiaopeng
  * Created on 2025-01-07 15:53
  */
@@ -50,7 +72,12 @@ public class MyServer {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             //给pipeline管道设置处理器，ChannelPipeline是Netty处理请求的责任链
-                            socketChannel.pipeline().addLast(new MyServerHandler());
+                            socketChannel.pipeline()
+                                    .addLast(new HttpServerCodec())
+                                    // http 消息聚合器1024*1024为接收的最大contentlength
+                                    .addLast(new HttpObjectAggregator(1024 * 1024))
+                                    .addLast(new HttpRequestHandler())
+                                    .addLast(new ExceptionHandler());
                         }
                     });
             //给workerGroup的EventLoop对应的管道设置处理器
@@ -85,6 +112,40 @@ public class MyServer {
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             //发生异常，关闭通道
             ctx.close();
+        }
+    }
+
+    @Slf4j
+    static class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+
+        @Override
+        public void channelReadComplete(ChannelHandlerContext ctx) {
+            ctx.flush();
+        }
+
+        @Override
+        protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
+            if (is100ContinueExpected(req)) {
+                // 检测 100 Continue，是否同意接收将要发送过来的实体
+                ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
+            }
+            // 因为经过HttpServerCodec处理器的处理后消息被封装为FullHttpRequest对象
+            ByteBuf buf = req.content();
+            String result = buf.toString(CharsetUtil.UTF_8);
+            log.info("req result:{}", result);
+            // 获取请求的uri
+            Map map = new HashMap<>();
+            map.put("method", req.method().name()); // 获取请求方法
+            map.put("uri", req.uri()); // 获取请求地址
+            // 创建完整的响应对象
+            FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                    HttpResponseStatus.OK, Unpooled.copiedBuffer(JSONUtil.toJsonStr(map),
+                    CharsetUtil.UTF_8));
+            // 设置头信息
+            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json; charset=UTF-8");
+            // 响应写回给客户端,并在协会后断开这个连接
+//            ctx.write(1 / 0);
+            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         }
     }
 
