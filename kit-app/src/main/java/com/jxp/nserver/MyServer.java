@@ -4,11 +4,13 @@ import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import cn.hutool.json.JSONUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -34,6 +36,11 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -149,6 +156,77 @@ public class MyServer {
         }
     }
 
+    static class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
+        private final ConcurrentHashMap<String, Channel> loggedInUsers;
+
+        public WebSocketFrameHandler(ConcurrentHashMap<String, Channel> loggedInUsers) {
+            this.loggedInUsers = loggedInUsers;
+        }
+
+        @Override
+        protected void channelRead0(ChannelHandlerContext ctx, WebSocketFrame frame) {
+            if (frame instanceof TextWebSocketFrame) {
+                String request = ((TextWebSocketFrame) frame).text();
+                System.out.println("Received: " + request);
+
+                // 处理登录请求
+                if (request.startsWith("LOGIN:")) {
+                    String[] parts = request.split(":");
+                    if (parts.length == 3) {
+                        String username = parts[1];
+                        String password = parts[2];
+                        // 进行用户名和密码的验证
+                        if (authenticate(username, password)) {
+                            loggedInUsers.put(username, ctx.channel());
+                            ctx.channel().writeAndFlush(new TextWebSocketFrame("Login successful: " + username));
+                        } else {
+                            ctx.channel().writeAndFlush(new TextWebSocketFrame("Login failed: Invalid credentials"));
+                        }
+                    } else {
+                        ctx.channel().writeAndFlush(new TextWebSocketFrame("Login failed: Invalid format"));
+                    }
+                } else {
+                    // 检查用户是否已登录
+                    String username = getUsernameFromChannel(ctx.channel());
+                    if (username != null) {
+                        // 处理已登录用户的其他请求
+                        String response = "Response from " + username + ": " + request;
+                        ctx.channel().writeAndFlush(new TextWebSocketFrame(response));
+                    } else {
+                        ctx.channel().writeAndFlush(new TextWebSocketFrame("Please login first"));
+                    }
+                }
+            } else if (frame instanceof PongWebSocketFrame) {
+                System.out.println("Received pong");
+            } else if (frame instanceof CloseWebSocketFrame) {
+                ctx.close();
+            } else if (frame instanceof PingWebSocketFrame) {
+                ctx.channel().writeAndFlush(new PongWebSocketFrame(frame.content().retain()));
+            } else {
+                throw new UnsupportedOperationException("Unsupported frame type: " + frame.getClass().getName());
+            }
+        }
+
+        private boolean authenticate(String username, String password) {
+            // 实现您的认证逻辑，这里使用简单的示例
+            return "admin".equals(username) && "password".equals(password);
+        }
+
+        private String getUsernameFromChannel(Channel channel) {
+            for (String username : loggedInUsers.keySet()) {
+                if (loggedInUsers.get(username) == channel) {
+                    return username;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            cause.printStackTrace();
+            ctx.close();
+        }
+    }
 
     public static void example() {
         ByteToMessageDecoder byteToMessageDecoder;
