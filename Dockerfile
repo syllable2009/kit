@@ -10,3 +10,4 @@ EXPOSE 8080
 
 # 设置默认命令运行应用
 ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-Xms256m","-Xmx256m","-jar","app.jar","--spring.profiles.active=prod","-c"]
