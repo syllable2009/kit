@@ -197,3 +197,9 @@ https://termux.dev/en/
 # UserLAnd
 在 Android 上运行 Linux 发行版或应用程序的最简单方法。
 https://github.com/CypherpunkArmory/UserLAnd
+
+
+docker run -d --name gopeed --restart always -p 6600:9999 -v /Users/jiaxiaopeng/docker/gopeed/download:/download liwei2633/gopeed:v1.6.7
+
+# Pingora正式开源：超强的Nginx替代品，每秒可处理4000万请求
+https://github.com/cloudflare/pingora
