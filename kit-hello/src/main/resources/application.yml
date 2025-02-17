@@ -1,4 +1,8 @@
 demo:
   starter:
     enable: true
-    name: 9999
+#    name: 9999
+
+
+server:
+  port: 8086

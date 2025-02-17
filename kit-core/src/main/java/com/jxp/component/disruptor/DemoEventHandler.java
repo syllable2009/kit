@@ -3,7 +3,9 @@ package com.jxp.component.disruptor;
 import com.jxp.component.disruptor.DemoEventHandler.DemoEvent;
 import com.lmax.disruptor.EventHandler;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -19,6 +21,8 @@ public class DemoEventHandler implements EventHandler<DemoEvent> {
         log.info("接收消息：{}", demoEvent.getValue());
     }
 
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Data
     public static class DemoEvent {
         private String value;

@@ -6,3 +6,9 @@ https://gitee.com/erupt/erupt
 # sensitive-word 基于 DFA 算法实现的高性能敏感词工具。
 https://github.com/houbb/sensitive-word
 
+# 这是webtor.io的自托管版本，以一体化 Docker 映像实现
+https://github.com/webtor-io/self-hosted
+docker run -d -p 8080:8080 -v /Users/jiaxiaopeng/docker/webtor/data:/data --name webtor --restart=always ghcr.io/webtor-io/self-hosted:latest
+
+# trackers
+https://github.com/ngosang/trackerslist
