@@ -20,9 +20,6 @@ public class AppSessionConfigDTO {
     // 会话间隔时间，单位秒
     private Long sessionInterval;
 
-    // 打招呼间隔时间，单位秒
-    private Long heloInterval;
-
     // 工作时间开始
     private String workStartTime;
     // 工作时间结束

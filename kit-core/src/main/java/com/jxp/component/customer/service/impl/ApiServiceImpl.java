@@ -7,10 +7,14 @@ import org.springframework.stereotype.Service;
 
 import com.jxp.component.customer.dto.AppManualConfigDTO;
 import com.jxp.component.customer.dto.AppSessionConfigDTO;
+import com.jxp.component.customer.dto.AppWelcomeConfigDTO;
 import com.jxp.component.customer.dto.MessageCallback;
 import com.jxp.component.customer.dto.SessionCacheDTO;
+import com.jxp.component.customer.service.AiService;
 import com.jxp.component.customer.service.ApiService;
 import com.jxp.component.customer.service.ConfigService;
+import com.jxp.component.customer.service.ManualService;
+import com.jxp.component.customer.service.MessageService;
 import com.jxp.component.customer.service.SessionService;
 
 import cn.hutool.core.util.StrUtil;
@@ -28,6 +32,12 @@ public class ApiServiceImpl implements ApiService {
     private SessionService sessionService;
     @Resource
     private ConfigService configService;
+    @Resource
+    private AiService aiService;
+    @Resource
+    private MessageService messageService;
+    @Resource
+    private ManualService manualService;
 
     @Override
     public void handleMessageCallback(MessageCallback messageCallback) {
@@ -81,24 +91,44 @@ public class ApiServiceImpl implements ApiService {
     private void handleUserMessageEvent(@NotNull SessionCacheDTO session,
             @NotNull MessageCallback messageCallback) {
         // 判断会话阶段
-        if (StrUtil.equals("robot", session.getState())) {
+        if (StrUtil.equals("robot", session.getType())) {
             // 先判断session是否需要升级，升级可以成为一个会话，也可以分开
             final AppManualConfigDTO dto = configService.getManualConfigDTO(messageCallback.getAppId());
             if (dto.getKeyword().contains(messageCallback.getContent())) {
                 // 会话升级，人工会话拦截，分配客服or留言，拉群
+                if (0 == session.getState()) {
+                    // 已经拦截过了，开启转人工
+                    if (dto.isIfManualBlock() && 1 == session.getBlockState()) {
+                        // 拦截一次
+                    }
+                    // 开启会话升级
+                    startUpgradeSession();
+                }
+                log.info("并发转人工，wait");
             } else {
                 // 处理机器人会话
+                aiService.llmgc(messageCallback.getContent());
                 return;
             }
-        } else if (StrUtil.equals("manual", session.getState())) {
+        } else if (StrUtil.equals("manual", session.getType())) {
             // 找到群，发送消息
         } else {
-
+            log.error("can not handle sesseion type");
         }
 
     }
 
+    private void startUpgradeSession() {
+        // 会话诊断，判断是否进入留言
+
+        // 结束当前机器人会话
+
+        // 开始人工会话
+    }
+
     private void onEnterAppEvent(MessageCallback messageCallback) {
         // 进入事件不影响会话状态，因为事件没有messageKey，无法记录
+        final AppWelcomeConfigDTO appWelcomeConfigDTO =
+                configService.getAppWelcomeConfigDTO(messageCallback.getAppId());
     }
 }

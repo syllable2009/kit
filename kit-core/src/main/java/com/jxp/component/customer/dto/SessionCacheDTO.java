@@ -22,9 +22,12 @@ public class SessionCacheDTO {
     private String username;
     private String startMsgKey;
     private String endMsgKey;
-    private String state;
+    // 0 1
+    private int state;
+    // manual robot
+    private String type;
     private long stimestamp;
 
-    // 会话是否被锁定
-    private Boolean hasLocked;
+    // 0-拦截，1=锁定
+    private int blockState;
 }

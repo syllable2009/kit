@@ -1,7 +1,5 @@
 package com.jxp.component.customer.dto;
 
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,21 +9,17 @@ import lombok.NoArgsConstructor;
  * @author jiaxiaopeng
  * Created on 2025-02-18 17:10
  */
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
-public class AppManualConfigDTO {
+public class AppWelcomeConfigDTO {
 
     private String appId;
 
-    // 转人工关键字
-    private List<String> keyword;
+    // 打招呼间隔时间，单位秒
+    private Long heloInterval;
 
-    // 是否进行人工会话拦截
-    private boolean ifManualBlock;
+    private String heloContent;
 
-    // 人工拦截提示
-    private String manualBlockContent;
 }
