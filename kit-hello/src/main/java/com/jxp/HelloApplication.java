@@ -1,6 +1,7 @@
 package com.jxp;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -59,7 +60,8 @@ public class HelloApplication {
         String baseUrl = "https://jsonplaceholder.typicode.com";
         final HttpClientConfigDto httpClientConfigDto = HttpClientConfigDto.getDefault(baseUrl);
         final DemoClient openApiClient = OpenApiClientConfig.createOpenApiClient(httpClientConfigDto, null, DemoClient.class);
-        final JsonNode call = call("", baseUrl, () -> openApiClient.posts(), null, "");
+        final JsonNode call = call("open-service-A", "/posts", () -> openApiClient.posts(), null,
+                "");
         return ResponseEntity.ok(call);
     }
 
@@ -76,11 +78,14 @@ public class HelloApplication {
                         () -> callSupplier.get().execute())
                 .apply();
         if (!response.isSuccessful()) {
-
+            log.warn("openapi invoke error, http code is not ok, uri: {}, httpCode: {}, response: "
+                            + "{}，requestParam: {}",
+                    uri, response.code(), response, Arrays.toString(requestParamForLog));
         }
         final T body = response.body();
         if (body == null) {
-
+            log.warn("openapi invoke error, returns null, uri: {}, requestParam: {}",
+                    uri, Arrays.toString(requestParamForLog));
         }
         return body;
     }
