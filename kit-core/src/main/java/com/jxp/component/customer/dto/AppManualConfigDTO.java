@@ -20,7 +20,7 @@ public class AppManualConfigDTO {
 
     private String appId;
 
-    // 转人工关键字
+    // 转人工关键字，如果是全局的话，此时才有效
     private List<String> keyword;
 
     // 是否进行人工会话拦截
@@ -28,4 +28,7 @@ public class AppManualConfigDTO {
 
     // 人工拦截提示
     private String manualBlockContent;
+
+    // 是否开启技能队列 0-全局拦截，1-技能队列
+    private int blockState;
 }

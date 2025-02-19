@@ -4,6 +4,7 @@ import com.jxp.component.customer.dto.AppLeaveMessageConfigDTO;
 import com.jxp.component.customer.dto.AppManualConfigDTO;
 import com.jxp.component.customer.dto.AppSessionConfigDTO;
 import com.jxp.component.customer.dto.AppWelcomeConfigDTO;
+import com.jxp.component.customer.dto.ManualGroupConfigDTO;
 
 /**
  * @author jiaxiaopeng
@@ -22,5 +23,8 @@ public interface ConfigService {
 
     // 获取留言配置
     AppLeaveMessageConfigDTO getLeaveMessageConfig(String appId);
+
+    // 获取客服组配置
+    ManualGroupConfigDTO getManualGroupConfig(String appId);
 
 }

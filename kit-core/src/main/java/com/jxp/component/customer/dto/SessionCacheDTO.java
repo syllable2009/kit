@@ -28,6 +28,6 @@ public class SessionCacheDTO {
     private String type;
     private long stimestamp;
 
-    // 0-拦截，1=锁定
+    // 0，1-拦截，2=锁定
     private int blockState;
 }
