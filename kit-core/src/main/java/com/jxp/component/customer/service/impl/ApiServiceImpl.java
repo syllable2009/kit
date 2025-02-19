@@ -82,6 +82,7 @@ public class ApiServiceImpl implements ApiService {
             // 开始一个新会话
             session = sessionService.newSession(null);
         } else {
+            // 会话检测
             final AppSessionConfigDTO appSessionConfig = configService.getAppSessionConfig(messageCallback.getAppId());
             // 会话是否过期，是否有效
             if (1 == 0) {
@@ -98,7 +99,16 @@ public class ApiServiceImpl implements ApiService {
         if (StrUtil.equals("robot", session.getType())) {
             // 先判断session是否需要升级，升级可以成为一个会话，也可以分开
             final AppManualConfigDTO dto = configService.getManualConfigDTO(messageCallback.getAppId());
-            final boolean tryResult = judgeUpgradeSession(dto, session, messageCallback);
+            boolean tryResult = false;
+            if (0 == dto.getBlockState()) {
+                // 全局拦截
+                tryResult = judgeUpgradeSession(dto, session, messageCallback);
+            } else if (1 == dto.getBlockState()) {
+                // 技能队列拦截
+                tryResult = judgeUpgradeSession(dto, session, messageCallback);
+            } else {
+                log.info("other block state");
+            }
             if (!tryResult) {
                 // 处理机器人会话
                 aiService.llmgc(messageCallback.getContent());
