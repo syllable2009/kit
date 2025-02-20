@@ -20,15 +20,21 @@ public class AppManualConfigDTO {
 
     private String appId;
 
+    private String appName;
+
+    private int appState;
+
+    private List<String> admin;
+
+    // 转人工规则，0-自定义转人工规则 1- 2- 3-强制机器人 4-强制转人工
+    private int manualType;
+
     // 转人工关键字，如果是全局的话，此时才有效
     private List<String> keyword;
 
-    // 是否进行人工会话拦截
-    private boolean ifManualBlock;
+    // 是否进行人工会话拦截：0-初始状态，1-人工拦截
+    private int ifManualBlock;
 
     // 人工拦截提示
     private String manualBlockContent;
-
-    // 是否开启技能队列 0-全局拦截，1-技能队列
-    private int blockState;
 }

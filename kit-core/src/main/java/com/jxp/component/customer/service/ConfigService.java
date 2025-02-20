@@ -1,10 +1,14 @@
 package com.jxp.component.customer.service;
 
+import java.util.List;
+
 import com.jxp.component.customer.dto.AppLeaveMessageConfigDTO;
 import com.jxp.component.customer.dto.AppManualConfigDTO;
 import com.jxp.component.customer.dto.AppSessionConfigDTO;
 import com.jxp.component.customer.dto.AppWelcomeConfigDTO;
 import com.jxp.component.customer.dto.ManualGroupConfigDTO;
+import com.jxp.component.customer.dto.TransferManualItemRule;
+import com.jxp.component.customer.dto.TransferManualRule;
 
 /**
  * @author jiaxiaopeng
@@ -26,5 +30,11 @@ public interface ConfigService {
 
     // 获取客服组配置
     ManualGroupConfigDTO getManualGroupConfig(String appId);
+
+    // 获取转人工规则配置
+    TransferManualRule getTransferManualRule(String appId);
+
+    // 获取转人工详细规则
+    List<TransferManualItemRule> getTransferManualItemRule(String appId);
 
 }

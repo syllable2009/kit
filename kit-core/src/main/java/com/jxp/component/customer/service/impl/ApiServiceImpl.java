@@ -1,19 +1,22 @@
 package com.jxp.component.customer.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.stereotype.Service;
 
+import com.google.common.collect.Lists;
 import com.jxp.component.customer.dto.AppManualConfigDTO;
 import com.jxp.component.customer.dto.AppSessionConfigDTO;
 import com.jxp.component.customer.dto.AppWelcomeConfigDTO;
-import com.jxp.component.customer.dto.ManualGroupConfigDTO;
 import com.jxp.component.customer.dto.MessageCallback;
 import com.jxp.component.customer.dto.SessionCacheDTO;
+import com.jxp.component.customer.dto.TransferManualItemRule;
 import com.jxp.component.customer.service.AiService;
 import com.jxp.component.customer.service.ApiService;
 import com.jxp.component.customer.service.ConfigService;
@@ -21,6 +24,7 @@ import com.jxp.component.customer.service.ManualService;
 import com.jxp.component.customer.service.MessageService;
 import com.jxp.component.customer.service.SessionService;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -90,28 +94,38 @@ public class ApiServiceImpl implements ApiService {
                 session = sessionService.newSession(null);
             }
         }
+        // 处理用户发送的消息(区分消息事件event)
         handleUserMessageEvent(session, messageCallback);
     }
 
-    private void handleUserMessageEvent(@NotNull SessionCacheDTO session,
+    // 处理用户发送的消息：会话session可能为空
+    private void handleUserMessageEvent(SessionCacheDTO session,
             @NotNull MessageCallback messageCallback) {
-        // 判断会话阶段
-        if (StrUtil.equals("robot", session.getType())) {
+        if (null == session) {
+            // 如果没有会话
+
+        } else if (StrUtil.equals("robot", session.getType())) {
+            // 判断会话阶段
             // 先判断session是否需要升级，升级可以成为一个会话，也可以分开
             final AppManualConfigDTO dto = configService.getManualConfigDTO(messageCallback.getAppId());
-            boolean tryResult = false;
-            if (0 == dto.getBlockState()) {
-                // 全局拦截
-                tryResult = judgeUpgradeSession(dto, session, messageCallback);
-            } else if (1 == dto.getBlockState()) {
-                // 技能队列拦截
-                tryResult = judgeUpgradeSession(dto, session, messageCallback);
-            } else {
-                log.info("other block state");
-            }
-            if (!tryResult) {
+            final int manualType = dto.getManualType();
+            if (0 == manualType) {
+                // 规则引擎匹配：全量匹配，找到一个停止or所有规则匹配
+                if (!matchTransferManualRule(messageCallback)) {
+                    // 处理机器人会话
+                    aiService.llmgc(messageCallback.getAppId(), messageCallback.getContent());
+                    return;
+                }
+            } else if (1 == manualType) {
+                // 机器人
                 // 处理机器人会话
-                aiService.llmgc(messageCallback.getContent());
+                aiService.llmgc(messageCallback.getAppId(), messageCallback.getContent());
+            } else if (2 == manualType) {
+                doUpgradeSession(dto, session, messageCallback);
+                // 人工
+                manualService.manualAnswer(messageCallback.getAppId(), messageCallback.getContent());
+            } else {
+                return;
             }
         } else if (StrUtil.equals("manual", session.getType())) {
             // 找到群，发送消息
@@ -121,45 +135,65 @@ public class ApiServiceImpl implements ApiService {
 
     }
 
-    // 判断是否需要升级会话，如果false走机器人，true自己处理
-    private boolean judgeUpgradeSession(AppManualConfigDTO dto, @NotNull SessionCacheDTO session,
-            @NotNull MessageCallback messageCallback) {
-        if (0 == dto.getBlockState()) {
-            // 全局拦截
-            final List<String> keyword = dto.getKeyword();
-            if (keyword.contains(messageCallback.getContent())) {
-                // 会话升级，人工会话拦截，分配客服or留言，拉群
-                if (0 == session.getState()) {
-                    // 已经拦截过了，开启转人工
-                    if (dto.isIfManualBlock() && 1 == session.getBlockState()) {
-                        // 拦截一次
-                        handleManualBlock();
-                    } else {
-                        // 开启会话升级
-                        tryUpgradeSession(dto, session, messageCallback);
-                    }
-                }
-                log.info("并发转人工，wait");
-                return true;
-            }
-        } else {
-            // 开启了技能队列
-            final ManualGroupConfigDTO manualGroupConfig =
-                    configService.getManualGroupConfig(messageCallback.getAppId());
-            final Map<String, Map<String, String>> manualGroup = manualGroupConfig.getManualGroup();
-            // 找到匹配关键字的组，如果未找到留言，否则走拦截
-            if ("匹配到" == "") {
-                // 工作时间等其他校验
-                // 要么拦截，要么留言
-                return true;
-            }
-        }
-        return false;
+    private boolean matchRuleDetail(TransferManualItemRule r, MessageCallback messageCallback, Map<String, String> processMap) {
+        return true;
     }
 
-    // 尝试升级
+    // 匹配转人工规则，如果匹配到进行人工处理
+    private boolean matchTransferManualRule(MessageCallback messageCallback) {
+        // 找到匹配的组，按照weight缓存好
+        final List<TransferManualItemRule> itemRuleList = configService.getTransferManualItemRule(messageCallback.getAppId());
+        // 数据缓存map，复用参数
+        final Map<String, String> processMap = new HashMap<>();
+
+        // 找到优先级最高的一个，还是找完所有的规则组
+        final List<TransferManualItemRule> matchItemRuleList = itemRuleList.stream()
+                .filter(e -> matchRuleDetail(e, messageCallback, processMap))
+                .collect(Collectors.toList());
+
+        if (CollUtil.isEmpty(matchItemRuleList)) {
+            // 没有找到人工规则，返回
+            return false;
+        }
+        // 客服组校验
+        List<String> groupIds = Lists.newArrayList();
+        // 组进行人员校验
+
+        if (groupIds.size() == 1) {
+            // 一个组的话，直接进行会话升级
+        } else {
+            // 发送让用户选择的内容
+        }
+        return true;
+    }
+
+    private void doUpgradeSession(AppManualConfigDTO dto, @NotNull SessionCacheDTO session,
+            @NotNull MessageCallback messageCallback) {
+
+    }
+
+    // 尝试升级，有拦截判断 + 人工验证 + 留言
     private void tryUpgradeSession(AppManualConfigDTO dto, @NotNull SessionCacheDTO session,
             @NotNull MessageCallback messageCallback) {
+        if (null == session) {
+
+        }
+        if (0 == dto.getIfManualBlock()) {
+            // 会话升级，人工会话拦截，分配客服or留言，拉群
+            if (0 == session.getState()) {
+                // 已经拦截过了，开启转人工
+                if (0 == dto.getIfManualBlock() && 0 == session.getBlockState()) {
+                    // 拦截一次
+                    handleManualBlock();
+                } else {
+                    // 开启会话升级
+                    doUpgradeSession(dto, session, messageCallback);
+                }
+            }
+            log.info("并发转人工，wait");
+            return;
+        }
+
         // 是否开启技能队列
 
         // 会话诊断，判断是否进入留言

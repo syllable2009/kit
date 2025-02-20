@@ -13,15 +13,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 @Data
-public class AppWelcomeConfigDTO {
+public class UserInfoDTO {
 
-    private String appId;
+    private String userId;
 
-    // 打招呼间隔时间，单位秒
-    private Long heloInterval;
+    private String userType;
 
-    private String heloContent;
+    private String userName;
 
-    private String heloMixcardContent;
+    private String name;
 
 }

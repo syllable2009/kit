@@ -6,5 +6,5 @@ package com.jxp.component.customer.service;
  */
 public interface AiService {
 
-    String llmgc(String content);
+    String llmgc(String appId, String content);
 }
