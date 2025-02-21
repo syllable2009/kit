@@ -38,4 +38,7 @@ public class TransferManualItemRule {
     private int weight;
 
     private int state;
+
+    // 客服分配规则  workload=工作量 饱和度 最久未分配
+    private String distributeType;
 }

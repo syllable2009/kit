@@ -37,4 +37,7 @@ public class AppManualConfigDTO {
 
     // 人工拦截提示
     private String manualBlockContent;
+
+    // 0-匿名用户 1-登录用户
+    private int userType;
 }
