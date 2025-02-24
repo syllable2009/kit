@@ -9,4 +9,8 @@ import com.jxp.component.ai.dto.RequestFilterChain;
  */
 public interface RequestHandler {
     void handle(Request request, RequestFilterChain filterChain);
+
+    default String getName() {
+        return null;
+    }
 }

@@ -11,4 +11,6 @@ public interface SessionService {
     SessionCacheDTO getByUserId(String userId);
 
     SessionCacheDTO newSession(SessionCacheDTO dto);
+
+    void endSession(SessionCacheDTO session);
 }

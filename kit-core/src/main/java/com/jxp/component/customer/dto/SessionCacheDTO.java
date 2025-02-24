@@ -26,7 +26,8 @@ public class SessionCacheDTO {
     private int state;
     // manual robot queue
     private String type;
-    private long stimestamp;
+    private long createStimestamp;
+    private long lastStimestamp;
 
     // 0-初始状态，1-拦截，2=锁定
     private int blockState;

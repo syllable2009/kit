@@ -12,3 +12,9 @@ docker run -d -p 8080:8080 -v /Users/jiaxiaopeng/docker/webtor/data:/data --name
 
 # trackers
 https://github.com/ngosang/trackerslist
+
+
+# tinystruct 一个简单的Java开发框架。思路简单，设计更优，使用更方便，性能更优！
+https://github.com/tinystruct/tinystruct
+
+# vert.x Vert.x 是构建基于 JVM 的反应式应用的工具包。 首先，它是一个全家桶式的工具包，既可以用简单的代码来创建一个高性能的网络服务器，也就是可以作为类似于 Apache 的 httpclient 来使用，提供 HTTP client 、DNS client 等一系列工具，同时提供各类好用的功能集合

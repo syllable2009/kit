@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jxp.component.ai.dto.Request;
 import com.jxp.component.ai.service.AiControllerService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +25,13 @@ public class ApiController {
     @Resource
     private AiControllerService aiControllerService;
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @GetMapping("/chat")
     public ResponseEntity<String> chat(@RequestParam String message) {
-        return ResponseEntity.ok("get");
+        return ResponseEntity.ok(aiControllerService.chat(Request.builder()
+                .userId("admin")
+                .amount(99)
+                .build()));
     }
 
 }
