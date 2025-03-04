@@ -15,6 +15,7 @@ https://github.com/ngosang/trackerslist
 
 
 # tinystruct 一个简单的Java开发框架。思路简单，设计更优，使用更方便，性能更优！
+tinystruct 是一个轻量级 Java 框架，旨在通过强调简单性和性能来简化应用程序开发。它无缝支持命令行工具和 API，使开发人员能够轻松创建强大的解决方案。它的核心理念体现在以下座右铭中：“简单很难，复杂很容易。更好的思考会带来更好的设计。”
 https://github.com/tinystruct/tinystruct
 
 # vert.x Vert.x 是构建基于 JVM 的反应式应用的工具包。 首先，它是一个全家桶式的工具包，既可以用简单的代码来创建一个高性能的网络服务器，也就是可以作为类似于 Apache 的 httpclient 来使用，提供 HTTP client 、DNS client 等一系列工具，同时提供各类好用的功能集合
