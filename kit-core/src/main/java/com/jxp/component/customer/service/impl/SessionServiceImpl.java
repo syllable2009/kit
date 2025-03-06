@@ -24,4 +24,8 @@ public class SessionServiceImpl implements SessionService {
     public SessionCacheDTO newSession(SessionCacheDTO dto) {
         return null;
     }
+
+    @Override
+    public void endSession(SessionCacheDTO session) {
+    }
 }
