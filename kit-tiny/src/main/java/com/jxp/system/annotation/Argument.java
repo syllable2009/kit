@@ -15,7 +15,7 @@ public @interface Argument {
 
     String description(); // Argument description
 
-    boolean optional() default false; // Whether the argument is optional
+    boolean required() default true; // Whether the argument is optional
 
     // 是否为必须的，非必须的有默认值
     String value() default "";

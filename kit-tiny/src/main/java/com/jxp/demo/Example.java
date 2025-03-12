@@ -1,6 +1,8 @@
 package com.jxp.demo;
 
 import com.jxp.system.annotation.Action;
+import com.jxp.system.annotation.Argument;
+import com.jxp.system.domain.Mode;
 
 /**
  * @author jiaxiaopeng
@@ -23,20 +25,13 @@ public class Example {
         return "Praise the Lord!";
     }
 
-//    @Action("say")
-//    public String say() throws ApplicationException {
-//        if (null != getContext().getAttribute("--words"))
-//            return getContext().getAttribute("--words").toString();
-//
-//        throw new ApplicationException("Could not find the parameter <i>words</i>.");
-//    }
-//
-//    // http://localhost:8089/?q=say/%E8%B5%9E%E7%BE%8E%E4%B8%BBwww%EF%BC%81
-//    // 编译后的方法参数名字会被擦除变成arg0，利用反射获取，需要使用注解或者其他办法
-//    @Action("say")
-//    public String say(String words) {
-//        return words;
-//    }
-
+    // 编译后的方法参数名字会被擦除变成arg0，利用反射获取，需要使用注解或者其他办法
+    // 严格以Argument的顺序取值,还有中方式是每个方法强制把上下文传递进来
+    @Action(value = "say", description = "Say Action", options = {
+            @Argument(key = "app", required = false, description = "Say something", value = "world")
+    }, mode = Mode.All)
+    public String say(String words) {
+        return words;
+    }
 
 }

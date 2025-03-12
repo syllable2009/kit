@@ -15,7 +15,7 @@ public @interface Action {
 
     String description() default ""; // Description of the action
 
-    Argument[] arguments() default {}; // Arguments expected by the action
+//    Argument[] arguments() default {}; // Arguments expected by the action
 
     Argument[] options() default {}; // Command-line options
 

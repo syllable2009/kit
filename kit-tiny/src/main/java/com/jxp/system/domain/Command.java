@@ -3,6 +3,8 @@ package com.jxp.system.domain;
 import java.lang.invoke.MethodHandle;
 import java.util.regex.Pattern;
 
+import com.jxp.system.annotation.Argument;
+
 import lombok.Data;
 
 /**
@@ -23,5 +25,5 @@ public class Command {
     private int priority;
     private Mode mode;
     private String pathRule;
-    private Object[] args = new Object[]{};
+    private Argument[] options = new Argument[]{};
 }
