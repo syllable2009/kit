@@ -106,6 +106,10 @@ docker run -d \
 --restart unless-stopped \
 suwmlee/ikaros:lates
 
+# 代替MovieDataCapture的电影数据抓取器
+xxxsen/yamdc:latest
+https://github.com/xxxsen/yamdc
+
 # Erupt
 https://www.erupt.xyz/#!/doc
 

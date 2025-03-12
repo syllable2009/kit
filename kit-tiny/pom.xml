@@ -85,12 +85,17 @@
                 <version>2.8</version>
                 <executions>
                     <execution>
+                        <id>copy-dependencies</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>lib</outputDirectory>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <!-- 排除 Spring Boot 内嵌的 Loader 和可能冲突的依赖 -->
+                            <excludeArtifactIds>spring-boot-loader,snakeyaml</excludeArtifactIds>
+                            <!-- 是否包含项目自身生成的 JAR -->
+                            <includeScope>runtime</includeScope>
                         </configuration>
                     </execution>
                 </executions>

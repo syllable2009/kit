@@ -23,4 +23,14 @@ public class Command {
     private Class<?>[] parameterTypes;
     private Class<?> returnType;
     private List<CommandParam<String, Object>> params;
+
+    public Object execute(Object requestContext) {
+        final MethodHandle methodHandle = this.getMethodHandle();
+
+        final Object result = this.methodHandle.invokeWithArguments(executeParams);
+        if (this.getReturnType().isAssignableFrom(Void.TYPE)) {
+            return null;
+        }
+        return result;
+    }
 }

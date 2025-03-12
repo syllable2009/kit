@@ -5,11 +5,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.HashBasedTable;
@@ -17,6 +19,8 @@ import com.jxp.tinystruct.annotation.Action;
 import com.jxp.tinystruct.annotation.Param;
 import com.jxp.tinystruct.domain.Command;
 import com.jxp.tinystruct.domain.CommandParam;
+import com.jxp.tinystruct.service.Configuration;
+import com.jxp.tinystruct.service.Settings;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,6 +33,14 @@ import lombok.extern.slf4j.Slf4j;
 public class AppManager {
 
     public static final HashBasedTable<String, String, Command> ACTION_MAP = HashBasedTable.create();
+    public static final String VERSION = "1.5.5";
+    private static final ConcurrentHashMap<String, Object> applications = new ConcurrentHashMap<>();
+    private static Configuration<String> settings;
+    private static volatile boolean initialized = false;
+
+
+    private AppManager() {
+    }
 
     public static void main(String[] args) throws Throwable {
 
@@ -71,9 +83,120 @@ public class AppManager {
         Map<String, String> requstMap = new HashMap<>();
         final Object[] executeParams = getExecuteParams(command, requstMap);
         final Object result = methodHandle.invokeWithArguments(executeParams);
+        if (command.getReturnType().isAssignableFrom(Void.TYPE)) {
+            return;
+        }
         log.info("result:{}", result);
+
+        List<String> commands = new ArrayList<>();
+        Map<String, String> requestMap = new ConcurrentHashMap<>();
+        // 参数解析与校验
+        analyzeParameters(args);
+        // 初始化配置，不同的app启动类从不同的地方加载
+        Settings config = new Settings("application.properties");
+        // 加载配置，参数配置替换默认配置吗？？？
+        AppManager.loadConfig(config, requestMap);
+        // 初始化工厂
+        AppManager.init();
+        final String importClassName = requestMap.get("import");
+//        AppManager.installApp(AppRun.class.getName());
+
+        commands.parallelStream()
+                .forEach(e -> {
+                    try {
+                        AppManager.call(e, null);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                });
     }
 
+    public static void loadConfig(Configuration<String> config, Map<String, String> attrs) {
+        // 参数传值覆盖
+//        config.set();
+        settings = config;
+    }
+
+    public static void init() throws Exception {
+        if (initialized) {
+            return;
+        }
+        if (null == settings) {
+            System.out.println("config is null,can not init");
+            return;
+        }
+        synchronized (AppManager.class) {
+            if (initialized) {
+                return;
+            }
+            // 设置命令
+            // 装载配置类
+            final String initClass = settings.get("default.import.applications");
+            System.out.println("default.import.applications:" + initClass);
+            if (null != initClass && initClass.length() > 0) {
+                // 逗号分割-实例化-install
+                Arrays.stream(initClass.split(";")).forEach(e -> installApp(e));
+            }
+            initialized = true;
+        }
+    }
+
+    public static void installApp(String appClassName) {
+
+        if (null == appClassName || 0 == appClassName.length()) {
+            return;
+        }
+        if (applications.contains(appClassName)) {
+            System.out.println("app has install");
+            return;
+        }
+        try {
+            Object app = Class.forName(appClassName).getDeclaredConstructor().newInstance();
+            AnnotationProcessor annotationProcessor = new AnnotationProcessor(app);
+            annotationProcessor.processActionAnnotations();
+            final Map<String, CommandLine> commandLines = app.getCommandLines();
+            for (Map.Entry<String, CommandLine> entry : commandLines.entrySet()) {
+                System.out.println("action-command:" + entry.getKey() + ":" + entry.getValue().getOptions());
+            }
+        } catch (Exception e) {
+            System.out.println("install app error," + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static Object call(final String path, final Context requestContext,
+            final Action.Mode mode) throws RuntimeException {
+
+        return null;
+    }
+
+    // 参数解析：-D为环境变量，格式-Dx=y
+    // --为K=V，格式为 --k=v 或者 --k v --k -D
+    // -a，格式为--a=true
+    // 其余为命令
+    private static void analyzeParameters(String[] args) {
+        System.out.println("origin-args:" + Arrays.stream(args).collect(Collectors.joining("|")));
+        int index = 0;
+        String current;
+        while (index < args.length) {
+            current = args[index];
+            if (null == current || current.length() == 0) {
+                index++;
+            } else if (current.startsWith("-")) {
+                index = processLongOption(null, args, index);
+            } else if (current.startsWith("-D")) {
+                // 处理环境变量
+                index = processSystemProperty(current, index);
+            } else {
+                commands.add(current);
+                index++;
+            }
+        }
+        System.out.println("command-args:" + commands.stream().collect(Collectors.joining("|")));
+        for (Map.Entry<String, String> entry : attrs.entrySet()) {
+            System.out.println("attr-args:" + entry.getKey() + ":" + entry.getValue());
+        }
+    }
 
     /**
      * 获取参数的方式一种是在@Action上指定，然后在数据中通过上下文指定
@@ -199,5 +322,55 @@ public class AppManager {
             default:
                 throw new IllegalArgumentException("Unsupported type: " + targetType.getName());
         }
+    }
+
+    /* 核心处理逻辑分解 */
+    private static int processLongOption(Context context, String[] args, int index) {
+
+        String option = null;
+        if (args[index].startsWith("--")) {
+            option = args[index].substring(2);
+        } else {
+            option = args[index].substring(1);
+        }
+
+        String[] parts = option.split("=", 2);
+
+        // 处理 --key=value 形式
+        if (parts.length == 2) {
+            attrs.put(parts[0], parts[1]);
+//            updateContextAttribute(context, parts[0], parts[1]);
+            return index + 1;
+        }
+
+        // 处理 --key value 形式
+        if (index + 1 < args.length && !isOption(args[index + 1])) {
+            attrs.put(parts[0], args[index + 1]);
+//            updateContextAttribute(context, option, args[index + 1].trim());
+            return index + 2;
+        }
+
+        // 无值参数处理
+//        context.setAttribute(option, Boolean.TRUE);
+        attrs.put(option, "true");
+        return index + 1;
+    }
+
+    private static int processSystemProperty(String arg, int index) {
+        String[] parts = arg.substring(2).split("=", 2);
+        if (parts.length < 2) {
+            throw new IllegalArgumentException("Invalid system property: " + arg);
+        }
+        System.setProperty(parts[0], parts[1]);
+        return index++;
+    }
+
+    /* 辅助方法 */
+    private static boolean isPlainCommand(String arg) {
+        return !arg.startsWith("--") && !arg.startsWith("-") && !arg.contains("=");
+    }
+
+    private static boolean isOption(String arg) {
+        return arg.startsWith("--") || arg.startsWith("-");
     }
 }
