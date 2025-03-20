@@ -1,4 +1,4 @@
 server:
-  port: 8888
+  port: 8999
   servlet:
     context-path: /tiny/api
