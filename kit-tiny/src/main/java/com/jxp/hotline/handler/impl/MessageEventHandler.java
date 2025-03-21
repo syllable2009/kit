@@ -519,7 +519,9 @@ public class MessageEventHandler implements EventHandler {
             SessionEntity session = new SessionEntity();
             session.setSid(sessionId);
 
-            if (null != assistantInfo) {
+            boolean ifAppointDistribute = null != assistantInfo;
+
+            if (ifAppointDistribute) {
                 // 指定客服分配
             } else {
                 // 查询组内的客服列表，找到在线客服
@@ -532,16 +534,23 @@ public class MessageEventHandler implements EventHandler {
                     distributeAssistant = distributeAssistant(groupInfo, onlineAssistantList, session);
                     if (null != distributeAssistant) {
                         // 移除队列
-                        ksRedisCommands.lpush(popKey);
+                        ksRedisCommands.lpop(popKey);
                         // 排队数原子性减一
                         ksRedisCommands.decr(groupQueueNumKey);
                     }
                 }
             }
             if (null == distributeAssistant) {
+                log.info("fireDistributeAssistant return, queue is empty,appId:{},groupId:{}", appId, groupId);
                 return;
             }
-            sessionService.distributeSession(session);
+            final Boolean ret = sessionService.distributeSession(session);
+            if (BooleanUtil.isFalse(ret) && !ifAppointDistribute) {
+                // 操作失败补偿
+                ksRedisCommands.incr(groupQueueNumKey);
+                ksRedisCommands.rpush(popKey, sessionId);
+                return;
+            }
             // 发送事件或异步处理
             synToAdmin();
         } catch (Exception e) {
