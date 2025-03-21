@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 public class AssistantInfo {
     private String assistantId;
     // online offline busy
+    // 只有在线online才可以自动分配，转接可以自定义状态
     private String state;
     // 应用下分配上限
     private Integer maxAppCount;

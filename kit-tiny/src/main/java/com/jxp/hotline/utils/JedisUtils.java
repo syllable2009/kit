@@ -89,8 +89,22 @@ public class JedisUtils {
 //                requestId);
     }
 
-    public static Integer incr(KsRedisCommands<String, String> ksRedisCommands, String lockKey) {
+    public static Integer incr(KsRedisCommands<String, String> ksRedisCommands, String key) {
         // 原子性加一，如果该键不存在，Redis 会将其初始化为 0，然后执行增加操作，所以结果为 1
-        return ksRedisCommands.incr(lockKey).intValue();
+        return ksRedisCommands.incr(key).intValue();
+    }
+
+    public static Integer decr(KsRedisCommands<String, String> ksRedisCommands, String key) {
+        // 原子性减一，如果key 不存在，那么key 的值会先被初始化为0 ，然后再执行DECR 操作
+        return ksRedisCommands.decr(key).intValue();
+    }
+
+    public static Integer getInt(KsRedisCommands<String, String> ksRedisCommands, String key) {
+        // 原子性减一，如果key 不存在，那么key 的值会先被初始化为0 ，然后再执行DECR 操作
+        final String num = ksRedisCommands.get(key);
+        if (StrUtil.isBlank(num)) {
+            return 0;
+        }
+        return Integer.parseInt(num);
     }
 }

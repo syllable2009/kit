@@ -1,5 +1,6 @@
 package com.jxp.hotline.utils;
 
+import java.util.List;
 import java.util.Map;
 
 import lombok.Data;
@@ -10,7 +11,7 @@ import lombok.Data;
  */
 public interface KsRedisCommands<K, V> {
 
-    Long del(K var1);
+    Long del(K... var1);
 
     Long append(K var1, V var2);
 
@@ -71,6 +72,40 @@ public interface KsRedisCommands<K, V> {
 
     Long strlen(K var1);
 
+    V brpoplpush(long var1, K var3, K var4);
+
+    V lindex(K var1, long var2);
+
+    Long linsert(K var1, boolean var2, V var3, V var4);
+
+    Long llen(K var1);
+
+    V lpop(K var1);
+
+    Long lpush(K var1, V... var2);
+
+    Long lpushx(K var1, V... var2);
+
+    List<V> lrange(K var1, long var2, long var4);
+
+    Long lrem(K var1, long var2, V var4);
+
+    String lset(K var1, long var2, V var4);
+
+    String ltrim(K var1, long var2, long var4);
+
+    V rpop(K var1);
+
+    V rpoplpush(K var1, K var2);
+
+    Long rpush(K var1, V... var2);
+
+    // 如果key不存在，什么都不做
+    Long rpushx(K var1, V... var2);
+
+    Long exists(K... var1);
+
+    Boolean expire(K var1, long var2);
 
     @Data
     static class SetArgs {

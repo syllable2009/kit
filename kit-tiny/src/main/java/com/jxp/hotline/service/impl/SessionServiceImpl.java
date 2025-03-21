@@ -30,5 +30,14 @@ public class SessionServiceImpl implements SessionService {
         return null;
     }
 
+    @Override
+    public Boolean upgradeQueueSession(SessionEntity sessionEntity) {
+        return null;
+    }
+
+    @Override
+    public Boolean upgradeManualSession(SessionEntity sessionEntity) {
+        return null;
+    }
 
 }

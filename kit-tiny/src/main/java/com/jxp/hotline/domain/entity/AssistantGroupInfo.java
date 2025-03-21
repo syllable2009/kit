@@ -16,13 +16,31 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class AssistantGroupInfo {
+
+    private String appId;
     private String groupId;
     private String groupName;
     // 是否在工作时间
     private Boolean working;
+    // 是否开启自动分配
+    private Boolean autoDistribute;
+    // 分配策略
+    private String distributeStrategy;
+    // 是否分配最近接待过的客服
+    private Boolean ifDistributeRecently;
 
-    // 是否开启排队过多不接单
+    // 是否开启排队过多不接单，超过queueNum留言
     private Boolean ifRejectManyQueue;
-    // 如果开启多少个不接单
-    private Integer queueNum;
+    // 如果开启多少个不接单20
+    private Integer rejectQueueNum;
+
+    // 是否进行转人工确认操作
+    private Boolean ifEnableConfirm;
+    // 是否进行转人工确认操作的排队数10
+    private Integer confirmNum;
+
+    // 超过5个人提示耐心等待
+    private Boolean ifNoticeManyQueue;
+    private Integer noticeNum;
+
 }

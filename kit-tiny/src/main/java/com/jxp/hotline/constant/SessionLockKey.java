@@ -11,8 +11,18 @@ public class SessionLockKey {
 
     // 会话创建或者升级使用的key appId:userId
     public static String sessionLockKey = "hotline:session:{}:{}";
+
+    // 组操作的加锁key appId：groupId
+    public static String sessionGroupLockKey = "hotline:session:group:{}:{}";
     // 会话排队数量，appId：groupId
     public static String AppGroupQueueNum = "hotline:manual:queue:num:{}:{}";
+    // 会话排队列表
+    public static String AppGroupQueueList = "hotline:manual:queue:list:{}:{}";
+
+    // 客服全局会话总数，assitantId
+    public static String AssitantGlobelSessionNum = "hotline:globel:session:num:{}";
+    // 客服但有用会话数，appId：assitantId
+    public static String AssitantAppSessionNum = "hotline:app:session:num:{}:{}";
 
     public static String format(String key, Object... params) {
         return StrUtil.format(key, params);
