@@ -35,9 +35,9 @@ public class SessionEntity {
     private String messageServerId;
     // 租户id，用户的租户
     private String tenantId;
-    // 会话服务类型：group
+    // 会话服务类型：groupTag
     private String targetType;
-    // 会话服务id，会话服务类型group，为groupId
+    // 会话服务id，会话服务类型groupTag，为groupId
     private String targetId;
     // 客服id
     private String assitantId;
@@ -79,7 +79,7 @@ public class SessionEntity {
     // 用户开始消息时间
     private LocalDateTime userFistMessageTime;
 
-    // 用户开始消息id
+    // 用户最后一条消息id
     private String userLastMessageId;
 
     // 用户最后一条消息时间，可用于并发消息并发判断

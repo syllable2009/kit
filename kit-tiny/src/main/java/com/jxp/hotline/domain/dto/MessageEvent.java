@@ -20,8 +20,13 @@ public class MessageEvent {
     private Long timestamp;
     // 应用号id
     private String appId;
-    // 事件类型：message action recall reaction
+    // info事件类型：message action recall reaction
     private String eventType;
+
+    // 原始事件的会话类型，p2p单聊 group普通群聊 groupTag客服群聊
+    private String sessionType;
+    // group groupTag时的id
+    private String sessionId;
 
     private MessageInfo info;
 

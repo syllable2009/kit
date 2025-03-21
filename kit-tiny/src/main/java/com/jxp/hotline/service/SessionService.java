@@ -18,4 +18,7 @@ public interface SessionService {
 
     // 升级为人工会话
     Boolean upgradeManualSession(SessionEntity sessionEntity);
+
+    // 分配会话
+    Boolean distributeSession(SessionEntity sessionEntity);
 }

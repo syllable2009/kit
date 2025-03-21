@@ -24,7 +24,7 @@ public class AssistantGroupInfo {
     private Boolean working;
     // 是否开启自动分配
     private Boolean autoDistribute;
-    // 分配策略
+    // 分配策略：workload=工作量，longest=最久未分配,saturation=饱和度
     private String distributeStrategy;
     // 是否分配最近接待过的客服
     private Boolean ifDistributeRecently;

@@ -40,4 +40,9 @@ public class SessionServiceImpl implements SessionService {
         return null;
     }
 
+    @Override
+    public Boolean distributeSession(SessionEntity sessionEntity) {
+        return null;
+    }
+
 }
