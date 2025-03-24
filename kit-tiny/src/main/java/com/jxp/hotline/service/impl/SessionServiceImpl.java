@@ -77,6 +77,20 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public Boolean endSession(SessionEntity session) {
         // 设置会话的结束原因和状态
+//        lambdaUpdate()
+        return true;
+    }
+
+    @Override
+    public Boolean manualUpdateSession(SessionEntity session) {
+        // lambdaUpdate()
+        // 客服消息数+1
+        return null;
+    }
+
+    @Override
+    public Boolean userUpdateSession(SessionEntity session) {
+        // 用户消息数+1
         return null;
     }
 

@@ -45,7 +45,7 @@ public class SessionEntity {
     private String assitantId;
     // 会话的额外信息只用来同步展示，不做逻辑处理，统一存储为ManualSessionExtra的json格式，防止每次表都需要新建字段
     private String extra;
-    // 会话来源，用户发起userToManual，客服发起manualToUser，转接会话 forward
+    // 会话来源，用户发起userToManual/userConfirm，客服发起manualToUser，转接会话 forward
     private String sessionFrom;
     // 转接会话才有的
     private String beforeSessionId;

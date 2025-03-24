@@ -16,6 +16,7 @@ import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.AssistantInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
+import com.jxp.hotline.domain.entity.SessionEntity.SessionEntityBuilder;
 import com.jxp.hotline.service.SessionManageService;
 import com.jxp.hotline.service.SessionService;
 import com.jxp.hotline.utils.JedisUtils;
@@ -133,22 +134,12 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     @Override
     public void recordUserLastMessage(SessionEntity session, MessageEvent event) {
-        // 设置会话消息，会话的lastId，时间信息并缓存等
-        // 用户发的消息数加一，根据时间判断，可以和最后一条消息来判断
-        if (event.getTimestamp() < System.currentTimeMillis()) {
-            // 更新信息
-            final String userLastMessageId = session.getUserLastMessageId();
-            final LocalDateTime userLastMessageTime = session.getUserLastMessageTime();
-            final Integer userRequestRobotNum = session.getUserRequestRobotNum();
-            final Integer userRequestManualNum = session.getUserRequestManualNum();
+
+        if (StrUtil.equals("p2p", event.getSessionType())) {
+            // 判断是用户发给app
+            processUserMessageToAppEvent(session, event);
         }
-        // 根据用户的会话状态更新不同的字段
-
-    }
-
-    @Override
-    public void recordManualLastMessage(SessionEntity session, String messageKey, LocalDateTime messageTime) {
-
+        // 只记录用户发给app的消息，会话以用户视角为准
     }
 
     public void doAfterSessionCreate(SessionEntity session) {
@@ -445,7 +436,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     // 升级操作了，理论上已经算是人工了
-    private void handleUpgradeQueueSession(AssistantGroupInfo groupInfo, Integer queueNum, SessionEntity dbSession) {
+    private Boolean handleUpgradeQueueSession(AssistantGroupInfo groupInfo, Integer queueNum, SessionEntity dbSession) {
 
         // 本次要操作的对象，不要修改参数对象
         final SessionEntity entity = SessionEntity.builder()
@@ -458,7 +449,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final Boolean ret = sessionService.upgradeQueueSession(entity);
         if (BooleanUtil.isFalse(ret)) {
             log.info("handleCreateQueueSession return,create session fail,session:{}", JSONUtil.toJsonStr(entity));
-            return;
+            return false;
         }
         // 排队数+1
         final Integer incr = JedisUtils.incr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AppGroupQueueNum, dbSession.getAppId(),
@@ -474,9 +465,10 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             }
         }
         // 发送MQ事件或者异步同步数据
+        return true;
     }
 
-    private void handleUpgradeManualSession(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo,
+    private Boolean handleUpgradeManualSession(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo,
             SessionEntity session) {
 
         // 转人工拦截
@@ -492,7 +484,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             if (BooleanUtil.isFalse(ret)) {
                 log.error("handleUpgradeManualSession return,升级为人工会话失败,session:{}", JSONUtil.toJsonStr(session));
                 incrSessionNum(assistantInfo.getAppId(), assistantInfo.getAssistantId());
-                return;
+                return false;
             }
         } catch (Exception e) {
             incrSessionNum(assistantInfo.getAppId(), assistantInfo.getAssistantId());
@@ -501,6 +493,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         // 发送转人工系统消息
         // 发送MQ事件或者异步同步数据
         synToAdmin();
+        return true;
     }
 
     // 会话管理
@@ -592,10 +585,12 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     @Override
     public void tryDistributeManualSession(SessionEntity session, AssistantGroupInfo groupInfo,
-            String sessionFrom) {
+            String sessionFrom, MessageEvent event) {
         if (BooleanUtil.isFalse(groupInfo.getWorking())) {
             // 发送客服组不在工作时间留言消息
             log.info("tryDistributeManualSession return,发送客服组不在工作时间留言消息,session:{}", JSONUtil.toJsonStr(session));
+            final String messageKey = processMixcardMessageToUserEvent(session, "groupNotWorkingLeaveMessage", null);
+            processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
             return;
         }
         // 查询组内的客服列表
@@ -606,6 +601,8 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
         if (CollUtil.isEmpty(onlineAssistantList)) {
             log.info("tryDistributeManualSession return,无客服在线,发送留言消息,session:{}", JSONUtil.toJsonStr(session));
+            final String messageKey = processMixcardMessageToUserEvent(session, "noOnlineAssistantLeaveMessage", null);
+            processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
             return;
         }
 
@@ -616,6 +613,8 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
         if (StrUtil.isBlank(requestId)) {
             log.error("tryDistributeManualSession return,加锁失败,session:{}", JSONUtil.toJsonStr(session));
+            final String messageKey = processNoticeMessageToUserEvent(session, "lockFailNotice", null);
+            processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
             return;
         }
 
@@ -625,13 +624,15 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             if (null == dbSession) {
                 // 会话恰好结束了，忽略掉，因为在会话管理算到这个会话了，会话结束的时候也要加锁
                 log.info("tryDistributeManualSession return,会话为空，数据异常,session:{}", JSONUtil.toJsonStr(session));
+                final String messageKey = processNoticeMessageToUserEvent(session, "sessionNullNotice", null);
+                processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
                 return;
             }
             if (StrUtil.equals("manual", dbSession.getSessionType())) {
                 // 出现并发，已经是人工了
                 log.info("tryDistributeManualSession return,并发转发到人工处理,session:{}", JSONUtil.toJsonStr(dbSession));
                 // 已经转人工了，直接发送给人工
-                // TODO 如何发送原消息呢
+                processManualMessageToUserEvent(dbSession, event);
                 return;
             }
 
@@ -655,16 +656,26 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 }
             }
             if (ifNeedQueue) {
-                // 排队拦截
-                if (interceptQueueSession(groupInfo, queueNum)) {
+                // 排队上限拦截
+                // 排队二次确认拦截
+                if (!StrUtil.equals("userConfirm", sessionFrom) && interceptQueueSession(groupInfo, queueNum)) {
                     log.info("tryDistributeManualSession return,排队拦截处理,session:{}", JSONUtil.toJsonStr(dbSession));
+                    final String messageKey = processMixcardMessageToUserEvent(session, "queueConfirm", null);
+                    processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
                     return;
                 }
                 // 未分配到客服，排队会话
-                handleUpgradeQueueSession(groupInfo, queueNum, dbSession);
+                final Boolean upgradeResult = handleUpgradeQueueSession(groupInfo, queueNum, dbSession);
+                // 排队过程中，暂时发给机器人？
+                if (BooleanUtil.isTrue(upgradeResult)) {
+                    // 发送机器人提示排队消息
+                }
             } else {
                 // 分配到客服，客服全局会话数和客服本应用会话数已经+1了
-                handleUpgradeManualSession(groupInfo, distribute.getAssistantInfo(), dbSession);
+                final Boolean upgradeResult = handleUpgradeManualSession(groupInfo, distribute.getAssistantInfo(), dbSession);
+                if (BooleanUtil.isTrue(upgradeResult)) {
+                    // 发送历史记录和通知
+                }
             }
 
         } catch (Exception e) {
@@ -769,22 +780,85 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     @Override
     public void processUserMessageToAppEvent(SessionEntity session, MessageEvent event) {
-        recordUserLastMessage(session, event);
-//        doAfterUserLastMessage();
+        // 用户发给客服的消息
+        final String messageKey = event.getInfo().getMessageKey();
+        final LocalDateTime messageTime = LocalDateTimeUtil.timestampToLocalDateTime(event.getTimestamp());
+        if (StrUtil.isBlank(messageKey)) {
+            log.info("processUserMessageToAppEvent return,messageKey is blank,session:{}", JSONUtil.toJsonStr(session));
+            return;
+        }
+        doAfterUserMessageToApp(session, messageKey, messageTime);
+    }
+
+    public void doAfterUserMessageToApp(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+        // 根据用户的会话状态更新不同的字段
+        // LastMessageId根据时间判断，可以和最后一条消息来判断
+        final SessionEntityBuilder builder = SessionEntity.builder()
+                .sid(session.getSid())
+                .updateTime(messageTime)
+                .sessionEndMessageId(messageKey)
+                .userLastMessageId(messageKey)
+                .userLastMessageTime(messageTime);
+        if (StrUtil.equals("manual", session.getSessionType())) {
+            builder.userRequestManualNum(1);
+            if (BooleanUtil.isTrue(session.getNoRequest())) {
+                builder.noRequest(false)
+                        .userFistMessageId(messageKey)
+                        .userFistMessageTime(messageTime);
+            }
+        } else {
+            builder.userRequestRobotNum(1);
+        }
+        sessionService.userUpdateSession(builder.build());
     }
 
     @Override
     public void processManualMessageToUserEvent(SessionEntity session, MessageEvent event) {
-
+        // 客服的消息发给用户
+        final LocalDateTime now = LocalDateTimeUtil.now();
+        String messageKey = null;
+        if (StrUtil.isBlank(messageKey)) {
+            log.info("processManualMessageToUserEvent return,messageKey is blank,session:{}", JSONUtil.toJsonStr(session));
+            return;
+        }
+        doAfterManualMessageToUser(session, messageKey, now);
     }
 
     @Override
-    public void processNoticeMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId) {
+    public void processRobotMessageToUserEvent(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+        if (StrUtil.isBlank(messageKey)) {
+            return;
+        }
+        doAfterUserMessageToApp(session, messageKey, messageTime);
+    }
 
+    public void doAfterManualMessageToUser(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+        // 记录人工的最后一条消息
+        final Boolean noReply = session.getNoReply();
+        final SessionEntityBuilder sessionBuilder = SessionEntity.builder()
+                .sid(session.getSid())
+                .manulLastMessageId(messageKey)
+                .manulLastMessageTime(messageTime)
+                .updateTime(messageTime)
+                .sessionEndMessageId(messageKey)
+                .manulReplyNum(1);
+        if (BooleanUtil.isTrue(noReply)) {
+            // 第一次回复
+            sessionBuilder.noReply(false)
+                    .manulFirstMessageId(messageKey)
+                    .manulFirstMessageTime(messageTime);
+        }
+        sessionService.manualUpdateSession(sessionBuilder.build());
     }
 
     @Override
-    public void processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId) {
+    public String processNoticeMessageToUserEvent(SessionEntity session, String templateId,
+            Map<String, String> paramId) {
+        return null;
+    }
 
+    @Override
+    public String processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId) {
+        return null;
     }
 }

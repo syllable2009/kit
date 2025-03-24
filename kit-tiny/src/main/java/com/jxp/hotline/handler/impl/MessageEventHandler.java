@@ -11,6 +11,7 @@ import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
 import com.jxp.hotline.handler.EventHandler;
 import com.jxp.hotline.service.SessionManageService;
+import com.jxp.hotline.utils.LocalDateTimeUtil;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
@@ -71,10 +72,11 @@ public class MessageEventHandler implements EventHandler {
                         userId);
                 return;
             }
-        } else {
-            // 记录会话的last相关信息
-            robotSessionManageService.recordUserLastMessage(activeSession, event);
         }
+//        else {
+//            // 记录会话的last相关信息，和下面机器人重复了
+//            robotSessionManageService.recordUserLastMessage(activeSession, event);
+//        }
 
         // 如果处于人工会话中则直接发给人工
         if (StrUtil.equals("manual", activeSession.getSessionType())) {
@@ -92,10 +94,15 @@ public class MessageEventHandler implements EventHandler {
             robotSessionManageService.processUserMessageToAppEvent(activeSession, event);
         } else if (1 == assistantGroups.size()) {
             // 尝试开始分配客服转人工
-            robotSessionManageService.tryDistributeManualSession(activeSession, assistantGroups.get(0), "userToManual");
+            robotSessionManageService.tryDistributeManualSession(activeSession, assistantGroups.get(0), "userToManual", event);
         } else {
             // 发送选择技能队列卡片，此时还是机器人会话，选择卡片以后调用distributeManualSession方法
-            sendUserChooseGroupMessage(activeSession, event, assistantGroups);
+            final String messageKey = sendUserChooseGroupMessage(activeSession, event, assistantGroups);
+            if (StrUtil.isBlank(messageKey)) {
+                log.error("message handler,sendUserChooseGroupMessage error");
+                return;
+            }
+            robotSessionManageService.processRobotMessageToUserEvent(activeSession, messageKey, LocalDateTimeUtil.now());
         }
     }
 
@@ -104,8 +111,9 @@ public class MessageEventHandler implements EventHandler {
         return "MessageEventHandler";
     }
 
-    private void sendUserChooseGroupMessage(SessionEntity session, MessageEvent event, List<AssistantGroupInfo> assistantGroups) {
+    private String sendUserChooseGroupMessage(SessionEntity session, MessageEvent event,
+            List<AssistantGroupInfo> assistantGroups) {
         // 构造参数
-        robotSessionManageService.processMixcardMessageToUserEvent(session, "userChooseGroupMessage", null);
+        return robotSessionManageService.processMixcardMessageToUserEvent(session, "userChooseGroupMessage", null);
     }
 }

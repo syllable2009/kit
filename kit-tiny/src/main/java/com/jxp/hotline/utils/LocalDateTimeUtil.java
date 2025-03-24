@@ -16,4 +16,8 @@ public class LocalDateTimeUtil {
         }
         return Instant.ofEpochMilli(timestamp).atZone(ZoneId.of("Asia/Shanghai")).toLocalDateTime();
     }
+
+    public static LocalDateTime now() {
+        return LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
+    }
 }

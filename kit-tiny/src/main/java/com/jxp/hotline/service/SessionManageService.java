@@ -27,8 +27,6 @@ public interface SessionManageService {
     // 记录用户的最后一条消息信息
     void recordUserLastMessage(SessionEntity session, MessageEvent event);
 
-    void recordManualLastMessage(SessionEntity session, String messageKey, LocalDateTime messageTime);
-
     void endSession(SessionEntity session);
 
     // 强制转接会话人
@@ -36,7 +34,7 @@ public interface SessionManageService {
 
     // 尝试处理分配客服的场景
     void tryDistributeManualSession(SessionEntity session, AssistantGroupInfo groupInfo,
-            String sessionFrom);
+            String sessionFrom, MessageEvent event);
 
     // 在组里尝试分配该客服，或者指定客服，如果指定客服，则只会给该客服分配
     // 适合客服上线场景调用
@@ -57,12 +55,14 @@ public interface SessionManageService {
     // 用户给消息号发送消息
     void processUserMessageToAppEvent(SessionEntity session, MessageEvent event);
 
-    // 客服给用户发送
+    // 客服给用户发送，需要记录转发以后的messageKey
     void processManualMessageToUserEvent(SessionEntity session, MessageEvent event);
 
+    void processRobotMessageToUserEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
+
     // 给用户发送系统消息
-    void processNoticeMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
+    String processNoticeMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
 
     // 给用户发送卡片消息
-    void processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
+    String processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
 }
