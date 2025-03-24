@@ -1,11 +1,11 @@
 package com.jxp.hotline.handler.impl;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Resource;
 
 import com.jxp.hotline.annotation.EventType;
+import com.jxp.hotline.config.SpringUtils;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
@@ -29,8 +29,6 @@ public class MessageEventHandler implements EventHandler {
     private SessionManageService manualSessionManageService;
     @Resource
     private SessionManageService robotSessionManageService;
-    @Resource
-    private Map<String, EventHandler> eventHandlerMap;
 
     @Override
     public void handle(MessageEvent event) {
@@ -38,7 +36,7 @@ public class MessageEventHandler implements EventHandler {
         final String sessionType = event.getSessionType();
         // 客服群的消息直接转发
         if (StrUtil.equals("groupTag", sessionType)) {
-            final EventHandler groupTagHandler = eventHandlerMap.get("groupTag");
+            final EventHandler groupTagHandler = SpringUtils.getBean("groupTagEventHandler");
             if (null != groupTagHandler) {
                 groupTagHandler.handle(event);
                 return;
@@ -47,7 +45,7 @@ public class MessageEventHandler implements EventHandler {
             return;
         } else if (StrUtil.equals("group", sessionType)) {
             // 普通群的消息直接转发
-            final EventHandler groupHandler = eventHandlerMap.get("group");
+            final EventHandler groupHandler = SpringUtils.getBean("groupEventHandler");
             if (null != groupHandler) {
                 groupHandler.handle(event);
                 return;

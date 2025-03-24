@@ -143,6 +143,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             final Integer userRequestManualNum = session.getUserRequestManualNum();
         }
         // 根据用户的会话状态更新不同的字段
+
     }
 
     @Override
@@ -768,7 +769,8 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     @Override
     public void processUserMessageToAppEvent(SessionEntity session, MessageEvent event) {
-
+        recordUserLastMessage(session, event);
+//        doAfterUserLastMessage();
     }
 
     @Override
