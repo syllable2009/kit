@@ -240,19 +240,19 @@ public class MessageEventHandler implements EventHandler {
                     groupInfo.getGroupId()));
 
             // 如果有排队先进排队，因为分配客服是一个比较重的操作
-            boolean ifQueue = queueNum > 0;
-            // 分配的客服
-            AssistantInfo assistantInfo = null;
+            boolean ifNeedQueue = queueNum > 0;
+            // 分配信息
+            DistributeAssitant distribute = null;
             // 不排队的话去尝试分配客服
-            if (!ifQueue) {
-                assistantInfo = distributeAssistant(groupInfo, onlineAssistantList, dbSession);
-                if (null == assistantInfo) {
+            if (!ifNeedQueue) {
+                distribute = distributeAssistant(groupInfo, onlineAssistantList, dbSession);
+                if (BooleanUtil.isFalse(distribute.getDistributeResult())) {
                     // 没有分配到客服，去排队
                     // 创建排队session
-                    ifQueue = true;
+                    ifNeedQueue = true;
                 }
             }
-            if (ifQueue) {
+            if (ifNeedQueue) {
                 // 排队拦截
                 if (interceptQueueSession(groupInfo, queueNum)) {
                     log.info("tryDistributeManualSession return,排队拦截处理,event:{}", JSONUtil.toJsonStr(event));
@@ -262,7 +262,7 @@ public class MessageEventHandler implements EventHandler {
                 handleUpgradeQueueSession(groupInfo, queueNum, dbSession);
             } else {
                 // 创建一个分配会话的session
-                handleUpgradeManualSession(groupInfo, assistantInfo, dbSession);
+                handleUpgradeManualSession(groupInfo, distribute.getAssistantInfo(), dbSession);
             }
 
         } catch (Exception e) {
@@ -629,82 +629,7 @@ public class MessageEventHandler implements EventHandler {
         return distribute;
     }
 
-    // 结束会话触发事件，或者客服上线事件，assistantInfo部位空时表示指定分配，否则为自动分配
-    private void doAllDistributeAssistant(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo) {
-        String appId = groupInfo.getAppId();
-        String groupId = groupInfo.getGroupId();
-        // 组不开启自动分配
-        if (BooleanUtil.isFalse(groupInfo.getAutoDistribute())) {
-            log.info("fireDistributeAssistant return, assistantGroupInfo is not autoDistribute,appId:{},groupId:{}"
-                    , appId, groupId);
-            return;
-        }
-        // 组的排队数校验
-        final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
-        final Integer groupQueueNum = JedisUtils.getInt(ksRedisCommands, groupQueueNumKey);
-        if (groupQueueNum < 1) {
-            log.info("fireDistributeAssistant return, queue num is 0,appId:{},groupId:{}", appId, groupId);
-            return;
-        }
-        // 组维度的加锁，尝试自动分配
-        final String lockKey = SessionLockKey.format(SessionLockKey.sessionGroupLockKey, appId
-                , groupId);
-        final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
-        if (StrUtil.isBlank(requestId)) {
-            log.error("fireDistributeAssistant lock fail, appId:{},groupId:{}", appId, groupId);
-            return;
-        }
-
-        // 分配的客服
-        AssistantInfo distributeAssistant = null;
-
-        // 触发自动分配循环，直到一个结束条件：排队人数为0，或找不到客服
-        try {
-            String popKey = SessionLockKey.format(SessionLockKey.AppGroupQueueList, appId
-                    , groupId);
-            final Object lindex = ksRedisCommands.lindex(popKey, 0);
-            if (null == lindex) {
-                // 清空排队key和统计数，加锁实现
-                ksRedisCommands.del(popKey, groupQueueNumKey);
-                log.info("fireDistributeAssistant return, queue is empty,appId:{},groupId:{}", appId, groupId);
-                return;
-            }
-            // 要分配的会话id
-            String sessionId = lindex.toString();
-            // 获取到会话信息
-            SessionEntity session = new SessionEntity();
-            session.setSid(sessionId);
-
-            boolean ifAppointDistribute = null != assistantInfo;
-
-            if (ifAppointDistribute) {
-                // 指定客服分配
-            } else {
-                // 查询组内的客服列表，找到在线客服
-                List<AssistantInfo> assistantList = Lists.newArrayList();
-                final List<AssistantInfo> onlineAssistantList = assistantList.stream()
-                        .filter(e -> StrUtil.equals(e.getState(), "online"))
-                        .collect(Collectors.toList());
-                if (CollUtil.isNotEmpty(onlineAssistantList)) {
-                    // 自动分配
-                    if (null != distributeAssistant) {
-
-                    }
-                }
-            }
-            if (null == distributeAssistant) {
-                log.info("fireDistributeAssistant return, queue is empty,appId:{},groupId:{}", appId, groupId);
-                return;
-            }
-
-        } catch (Exception e) {
-            // 控制incr操作后不能补偿的问题
-            log.error("fireDistributeAssistant lock exception, appId:{},groupId:{},", appId, groupId, e);
-        } finally {
-            JedisUtils.releaseLockSafe(ksRedisCommands, lockKey, requestId);
-        }
-    }
-
+    // 会话管理
     private void synToAdmin() {
 
     }
