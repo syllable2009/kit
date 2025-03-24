@@ -5,19 +5,12 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.jxp.hotline.annotation.EventType;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
 import com.jxp.hotline.handler.EventHandler;
-import com.jxp.hotline.service.ManualService;
-import com.jxp.hotline.service.RobotService;
 import com.jxp.hotline.service.SessionManageService;
-import com.jxp.hotline.service.SessionService;
-import com.jxp.hotline.service.TransferRuleService;
-import com.jxp.hotline.utils.KsRedisCommands;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
@@ -36,16 +29,6 @@ public class MessageEventHandler implements EventHandler {
     private SessionManageService manualSessionManageService;
     @Resource
     private SessionManageService robotSessionManageService;
-    @Resource
-    private SessionService sessionService;
-    @Resource
-    private TransferRuleService transferRuleService;
-    @Resource
-    private RobotService robotService;
-    @Resource
-    private ManualService manualService;
-    @Autowired(required = false)
-    private KsRedisCommands ksRedisCommands;
     @Resource
     private Map<String, EventHandler> eventHandlerMap;
 
@@ -101,25 +84,30 @@ public class MessageEventHandler implements EventHandler {
             log.info("message handler,sendUserMessageToLiveCustomer,messageServerId:{},userId:{}", messageServerId,
                     userId);
             // 发给客服
-            manualService.processUserMessage(activeSession, event);
+            manualSessionManageService.processManualMessageToUserEvent(activeSession, event);
             return;
         }
         // 否则进行转人工规则匹配，匹配到组，如果这里需要详细，也可以封装返回一个详细DTO对象
-        final List<AssistantGroupInfo> assistantGroups = transferRuleService.matchLiveGroup(event);
+        final List<AssistantGroupInfo> assistantGroups = robotSessionManageService.matchLiveGroup(event);
         if (CollUtil.isEmpty(assistantGroups)) {
             //进入机器人会话
-            robotService.processUserMessage(activeSession, event);
+            robotSessionManageService.processUserMessageToAppEvent(activeSession, event);
         } else if (1 == assistantGroups.size()) {
             // 尝试开始分配客服转人工
             robotSessionManageService.tryDistributeManualSession(activeSession, assistantGroups.get(0), "userToManual");
         } else {
             // 发送选择技能队列卡片，此时还是机器人会话，选择卡片以后调用distributeManualSession方法
-            robotService.sendUserChooseGroupMessage(activeSession, event, assistantGroups);
+            sendUserChooseGroupMessage(activeSession, event, assistantGroups);
         }
     }
 
     @Override
     public String getName() {
         return "MessageEventHandler";
+    }
+
+    private void sendUserChooseGroupMessage(SessionEntity session, MessageEvent event, List<AssistantGroupInfo> assistantGroups) {
+        // 构造参数
+        robotSessionManageService.processMixcardMessageToUserEvent(session, "userChooseGroupMessage", null);
     }
 }

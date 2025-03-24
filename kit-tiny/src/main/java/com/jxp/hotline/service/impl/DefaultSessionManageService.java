@@ -2,6 +2,7 @@ package com.jxp.hotline.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -35,6 +36,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class DefaultSessionManageService implements SessionManageService {
+
+    @Override
+    public List<AssistantGroupInfo> matchLiveGroup(MessageEvent event) {
+        return null;
+    }
 
     @Resource
     private SessionService sessionService;
@@ -758,5 +764,25 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                         .build());
             }
         }
+    }
+
+    @Override
+    public void processUserMessageToAppEvent(SessionEntity session, MessageEvent event) {
+
+    }
+
+    @Override
+    public void processManualMessageToUserEvent(SessionEntity session, MessageEvent event) {
+
+    }
+
+    @Override
+    public void processNoticeMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId) {
+
+    }
+
+    @Override
+    public void processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId) {
+
     }
 }

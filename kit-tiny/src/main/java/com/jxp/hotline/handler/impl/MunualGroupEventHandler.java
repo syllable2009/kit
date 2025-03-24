@@ -5,7 +5,6 @@ import javax.annotation.Resource;
 import com.jxp.hotline.annotation.EventType;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.handler.EventHandler;
-import com.jxp.hotline.service.ManualService;
 import com.jxp.hotline.service.SessionService;
 
 import cn.hutool.json.JSONUtil;
@@ -19,8 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 @EventType("munualGroup")
 public class MunualGroupEventHandler implements EventHandler {
 
-    @Resource
-    private ManualService manualService;
     @Resource
     private SessionService sessionService;
 

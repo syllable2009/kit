@@ -1,6 +1,8 @@
 package com.jxp.hotline.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import com.jxp.hotline.domain.dto.DistributeAssitant;
 import com.jxp.hotline.domain.dto.MessageEvent;
@@ -14,6 +16,8 @@ import com.jxp.hotline.domain.entity.SessionEntity;
  */
 
 public interface SessionManageService {
+
+    List<AssistantGroupInfo> matchLiveGroup(MessageEvent event);
 
     SessionEntity getLastActiveSession(String appId, String userId);
 
@@ -49,4 +53,16 @@ public interface SessionManageService {
 
     // 消费客服上线事件，客服上线会打满直至饱和，用户的上线操作也会触发给其他在线客服分配
     void handleAssitantOnlineEvent(String assitantId);
+
+    // 用户给消息号发送消息
+    void processUserMessageToAppEvent(SessionEntity session, MessageEvent event);
+
+    // 客服给用户发送
+    void processManualMessageToUserEvent(SessionEntity session, MessageEvent event);
+
+    // 给用户发送系统消息
+    void processNoticeMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
+
+    // 给用户发送卡片消息
+    void processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
 }

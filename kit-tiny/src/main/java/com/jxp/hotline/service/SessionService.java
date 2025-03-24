@@ -3,6 +3,7 @@ package com.jxp.hotline.service;
 import com.jxp.hotline.domain.entity.SessionEntity;
 
 /**
+ * session的crud
  * @author jiaxiaopeng
  * Created on 2025-03-20 11:33
  */
