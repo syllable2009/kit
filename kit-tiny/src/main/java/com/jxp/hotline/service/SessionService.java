@@ -21,4 +21,12 @@ public interface SessionService {
 
     // 分配会话
     Boolean distributeSession(SessionEntity sessionEntity);
+
+    // 会话开始，可以当做事件，也可以串行调用
+    void handleManualSessionStartEvent(SessionEntity sessionEntity);
+
+    // 会话结束，可以当做事件，也可以串行调用
+    void handleManualSessionEndEvent(SessionEntity sessionEntity);
+
+
 }

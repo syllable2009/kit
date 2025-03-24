@@ -31,8 +31,6 @@ public class SessionEntity {
     // 如果结束，表示结束原因
     private String cause;
 
-    // 应用号id
-    private String messageServerId;
     // 租户id，用户的租户
     private String tenantId;
     // 会话服务类型：groupTag

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.common.collect.Lists;
 import com.jxp.hotline.annotation.EventType;
 import com.jxp.hotline.constant.SessionLockKey;
+import com.jxp.hotline.domain.dto.DistributeAssitant;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.AssistantInfo;
@@ -352,73 +353,102 @@ public class MessageEventHandler implements EventHandler {
         // 发送MQ事件或者异步同步数据
     }
 
-    private AssistantInfo distributeAssistant(AssistantGroupInfo groupInfo, List<AssistantInfo> manualInfoList,
+    private static DistributeAssitant generateFailDistributeAssitant(String reason) {
+        return DistributeAssitant.builder()
+                .distributeResult(false)
+                .failReason(reason)
+                .build();
+    }
+
+    // 分配会话，包装分配的结果和分配的详细信息
+    private DistributeAssitant distributeAssistant(AssistantGroupInfo groupInfo, List<AssistantInfo> manualInfoList,
             SessionEntity session) {
+
+        final String appId = groupInfo.getAppId();
+        final String groupId = groupInfo.getGroupId();
+
+        // 组不开启自动分配
+        if (BooleanUtil.isFalse(groupInfo.getAutoDistribute())) {
+            log.info("doGroupDistributeAssistant return, assistantGroupInfo is not autoDistribute,appId:{},groupId:{}"
+                    , appId, groupId);
+            return generateFailDistributeAssitant("groupCloseAutoDistribute");
+        }
+
+        // 组的排队数校验
+        final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
+        final Integer groupQueueNum = JedisUtils.getInt(ksRedisCommands, groupQueueNumKey);
+        if (groupQueueNum < 1) {
+            log.info("doGroupDistributeAssistant return, queue num is 0,appId:{},groupId:{}", appId, groupId);
+            return generateFailDistributeAssitant("groupQueueNull");
+        }
+
         // 可自动分配的客服列表,只有在线的客服才能自动分配分配
         final List<AssistantInfo> distributeAssistantList = manualInfoList.stream()
                 .filter(e -> StrUtil.equals(e.getState(), "online"))
                 .collect(Collectors.toList());
 
         if (CollUtil.isEmpty(distributeAssistantList)) {
-            // 发送当前无在线客服留言卡片
-            return null;
+            return generateFailDistributeAssitant("onNolineAssistant");
         }
-        // 分配的客服
-        AssistantInfo assistant = null;
-
         // 是否开始最近优先分配
         if (BooleanUtil.isTrue(groupInfo.getIfDistributeRecently())) {
             // 查询最近的会话，判断是否可分配列表中
+            AssistantInfo assistant = null;
+            if (null != assistant) {
+                return DistributeAssitant.builder()
+                        .distributeResult(true)
+                        .distributeStrategy("recently")
+                        .build();
+            }
         }
-
+        // 分配的客服
+        DistributeAssitant distribute = null;
         final String distributeStrategy = groupInfo.getDistributeStrategy();
         switch (distributeStrategy) {
             case "saturation":
-                assistant = getLongestAssistant(groupInfo.getGroupId(), manualInfoList);
+                distribute = getLongestAssistant(groupInfo.getGroupId(), manualInfoList);
                 break;
             case "longest":
-                assistant = getLongestAssistant(groupInfo.getGroupId(), manualInfoList);
+                distribute = getLongestAssistant(groupInfo.getGroupId(), manualInfoList);
                 break;
             case "workload":
-                assistant = getLongestAssistant(groupInfo.getGroupId(), manualInfoList);
+                distribute = getLongestAssistant(groupInfo.getGroupId(), manualInfoList);
                 break;
             default:
-                return null;
+                return generateFailDistributeAssitant("notSupportDistributeStrategy");
         }
-
-        return assistant;
+        distribute.setDistributeStrategy(distributeStrategy);
+        return distribute;
     }
 
-    private AssistantInfo getLongestAssistant(String groupId, List<AssistantInfo> manualInfoList) {
+    private DistributeAssitant getLongestAssistant(String groupId, List<AssistantInfo> manualInfoList) {
 
-        // 分配的客服
-        AssistantInfo assistantInfo = null;
+        String assistantId = null;
+        Integer maxGlobalCount = null;
+        Integer maxAppCount = null;
 
-        // 只有一个直接分配
-        if (manualInfoList.size() == 1) {
-            assistantInfo = manualInfoList.get(0);
-            if (hasReachedMaxNum(groupId, assistantInfo.getAssistantId(),
-                    assistantInfo.getMaxGlobalCount(), assistantInfo.getMaxAppCount())) {
-                return null;
+        DistributeAssitant distribute = null;
+
+        // 按照时间顺序对list重排
+        for (AssistantInfo a : manualInfoList) {
+            assistantId = a.getAssistantId();
+            maxGlobalCount = a.getMaxGlobalCount();
+            // 如果全局+1成功，单应用失败，则在单应用校验中补偿
+            if (hasReachedGlobalMax(assistantId, maxGlobalCount)) {
+                distribute = generateFailDistributeAssitant("reachedGlobalMax");
+                continue;
             }
-        } else {
-            // redis按照组的维度批量获取客服hash
-            // 排序循环判断条件
-            assistantInfo = null;
+            maxAppCount = a.getMaxAppCount();
+            if (hasReachedAppMax(groupId, assistantId, maxAppCount)) {
+                distribute = generateFailDistributeAssitant("reachedAppMax");
+                continue;
+            }
+            return DistributeAssitant.builder()
+                    .assistantInfo(a)
+                    .distributeResult(true)
+                    .build();
         }
-        return assistantInfo;
-    }
-
-    public boolean hasReachedMaxNum(String groupId, String assistantId, Integer globalSessionMax, Integer appSessionMax) {
-        if (hasReachedGlobalMax(assistantId, globalSessionMax)) {
-            return true;
-        }
-        if (hasReachedAppMax(groupId, assistantId, appSessionMax)) {
-            // 补偿全局加的会话数
-            JedisUtils.decr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assistantId));
-            return true;
-        }
-        return false;
+        return distribute;
     }
 
     private boolean hasReachedGlobalMax(String assistantId, Integer maxNum) {
@@ -426,6 +456,7 @@ public class MessageEventHandler implements EventHandler {
         final String key = SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assistantId);
         final int globelNum = JedisUtils.incr(ksRedisCommands, key).intValue();
         if (globelNum > maxNum) {
+            // 补偿回来
             JedisUtils.decr(ksRedisCommands, key);
             return true;
         }
@@ -436,61 +467,186 @@ public class MessageEventHandler implements EventHandler {
         final String key = SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, groupId, assistantId);
         final int globelNum = JedisUtils.incr(ksRedisCommands, key).intValue();
         if (globelNum > maxNum) {
-            JedisUtils.decr(ksRedisCommands, key);
+            // 双补偿
+            decrSessionNum(groupId, assistantId);
             return true;
         }
         return false;
     }
 
-    private void incrSessionNum(String appId, String assitantId) {
+    private void incrSessionNum(String groupId, String assitantId) {
         JedisUtils.incr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assitantId));
-        JedisUtils.incr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, appId,
+        JedisUtils.incr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, groupId,
                 assitantId));
     }
 
-    private void decrSessionNum(String appId, String assitantId) {
+    // 其他地方不补偿，除非创建会话db失败
+    private void decrSessionNum(String groupId, String assitantId) {
         JedisUtils.decr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assitantId));
-        JedisUtils.decr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, appId,
+        JedisUtils.decr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, groupId,
                 assitantId));
     }
 
     // 消费客服上线事件，客服上线会打满直至饱和，用户的上线操作也会触发给其他在线客服分配
-    private void fireAssistantOnline(String assitantId) {
+    private void handleAssitantOnlineEvent(String assitantId) {
         // 查询客服信息
         AssistantInfo assistantInfo = null;
         if (null == assistantInfo) {
-            log.info("fireAssistantOnline return,assistantInfo is null,assitantId:{}", assitantId);
+            log.info("handleAssitantOnlineEvent return,assistantInfo is null,assitantId:{}", assitantId);
             return;
         }
         if (!StrUtil.equals("online", assistantInfo.getState())) {
-            log.info("fireAssistantOnline return,assitantId not online,assistantInfo:{}", JSONUtil.toJsonStr(assistantInfo));
+            log.info("handleAssitantOnlineEvent return,assitantId not online,assistantInfo:{}", JSONUtil.toJsonStr(assistantInfo));
             return;
         }
         // 查询客服的所有组信息
         List<AssistantGroupInfo> groupInfoList = Lists.newLinkedList();
+        DistributeAssitant distribute = null;
         for (AssistantGroupInfo group : groupInfoList) {
-            fireDistributeAssistant(group, assistantInfo);
+            distribute = doGroupDistributeAssistant(group, assistantInfo);
+            // 达到全局上限后退出循环
+            if (BooleanUtil.isFalse(distribute.getDistributeResult()) && StrUtil.equals("globelMax",
+                    distribute.getFailReason())) {
+                break;
+            }
+            if (BooleanUtil.isTrue(distribute.getDistributeResult())) {
+                // 分到的新会话
+                final String sessionId = distribute.getSessionId();
+                // 查询新会话
+                SessionEntity newSession = SessionEntity.builder()
+                        .sid(sessionId)
+                        .build();
+                distributeSession(SessionEntity.builder()
+                        .sid(newSession.getSid())
+                        .appId(newSession.getAppId())
+                        .targetType(newSession.getTargetType())
+                        .targetId(newSession.getTargetId())
+                        .assitantId(distribute.getAssistantInfo().getAssistantId())
+                        .build());
+            }
         }
     }
 
-    // 结束会话触发事件，或者客服上线事件，assistantInfo部位空时表示指定分配，否则为自动分配
-    private void fireDistributeAssistant(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo) {
+    private void distributeSession(SessionEntity session) {
+        final Boolean ret = sessionService.distributeSession(session);
+        if (BooleanUtil.isFalse(ret)) {
+            // 操作失败补偿
+            final String appId = session.getAppId();
+            final String groupId = session.getTargetId();
+            final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
+            ksRedisCommands.incr(groupQueueNumKey);
+            final String popKey = SessionLockKey.format(SessionLockKey.AppGroupQueueList, appId
+                    , groupId);
+            ksRedisCommands.rpush(popKey, session.getSid());
+            // 排队的数据回滚
+            incrSessionNum(groupId, session.getAssitantId());
+        } else {
+            // 发送事件或异步处理
+            synToAdmin();
+        }
+    }
+
+    // 处理会话结束自动分配事件，转接给别人相当于自己的会话结束，别人可以直接分配
+    private void handleManualSessionEndEvent(SessionEntity session) {
+        AssistantGroupInfo groupInfo = null;
+        AssistantInfo assistantInfo = null;
+        DistributeAssitant distribute = doGroupDistributeAssistant(groupInfo, assistantInfo);
+        if (BooleanUtil.isTrue(distribute.getDistributeResult())) {
+            // 分到的新会话
+            final String sessionId = distribute.getSessionId();
+            // 查询新会话
+            SessionEntity newSession = SessionEntity.builder().build();
+            distributeSession(SessionEntity.builder()
+                    .sid(newSession.getSid())
+                    .appId(newSession.getAppId())
+                    .targetType(newSession.getTargetType())
+                    .targetId(newSession.getTargetId())
+                    .assitantId(distribute.getAssistantInfo().getAssistantId())
+                    .build());
+        }
+    }
+
+
+    // 客服自动分配，只分配一个客服组
+    private DistributeAssitant doGroupDistributeAssistant(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo) {
+
         String appId = groupInfo.getAppId();
         String groupId = groupInfo.getGroupId();
-        // 加锁之前先判断一下，过滤数据，组的key不存在即为0
-        final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
-        final Integer groupQueueNum = JedisUtils.getInt(ksRedisCommands, groupQueueNumKey);
-        if (groupQueueNum < 1) {
-            log.info("fireDistributeAssistant return, queue num is 0,appId:{},groupId:{}", appId, groupId);
-            return;
+
+        // 组维度的加锁，尝试自动分配
+        final String lockKey = SessionLockKey.format(SessionLockKey.sessionGroupLockKey, appId
+                , groupId);
+        final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
+        if (StrUtil.isBlank(requestId)) {
+            log.error("doGroupDistributeAssistant lock fail, appId:{},groupId:{}", appId, groupId);
+            return generateFailDistributeAssitant("groupLockFail");
         }
+
+        // 分配的客服，分配不到位空
+        DistributeAssitant distribute = null;
+        try {
+            final String popKey = SessionLockKey.format(SessionLockKey.AppGroupQueueList, appId
+                    , groupId);
+            final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
+            final Object lindex = ksRedisCommands.lindex(popKey, 0);
+            if (null == lindex) {
+                // 清空排队key和统计数，加锁实现
+                ksRedisCommands.del(popKey, groupQueueNumKey);
+                log.info("doGroupDistributeAssistant return, queue is empty,appId:{},groupId:{}", appId, groupId);
+                return generateFailDistributeAssitant("groupQueueEmpty");
+            }
+            // 要分配的会话id
+            String sessionId = lindex.toString();
+            // 获取到会话信息，模拟查询
+            SessionEntity session = new SessionEntity();
+            session.setSid(sessionId);
+
+            // 查询组内的客服列表，找到在线客服
+            List<AssistantInfo> assistantList = Lists.newArrayList(assistantInfo);
+            // 此时只需要给特定的客服分配
+            distribute = distributeAssistant(groupInfo, assistantList, session);
+            if (BooleanUtil.isTrue(distribute.getDistributeResult())) {
+                // 移除队列
+                ksRedisCommands.lpop(popKey);
+                // 排队数原子性减一
+                ksRedisCommands.decr(groupQueueNumKey);
+            }
+        } catch (Exception e) {
+            log.error("doGroupDistributeAssistant lock exception, appId:{},groupId:{},", appId, groupId, e);
+            distribute = DistributeAssitant.builder()
+                    .distributeResult(false)
+                    .failReason(e.getMessage())
+                    .build();
+        } finally {
+            JedisUtils.releaseLockSafe(ksRedisCommands, lockKey, requestId);
+        }
+        if (null == distribute) {
+            distribute = DistributeAssitant.builder()
+                    .distributeResult(false)
+                    .failReason("unkownReason")
+                    .build();
+        }
+        return distribute;
+    }
+
+    // 结束会话触发事件，或者客服上线事件，assistantInfo部位空时表示指定分配，否则为自动分配
+    private void doAllDistributeAssistant(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo) {
+        String appId = groupInfo.getAppId();
+        String groupId = groupInfo.getGroupId();
         // 组不开启自动分配
         if (BooleanUtil.isFalse(groupInfo.getAutoDistribute())) {
             log.info("fireDistributeAssistant return, assistantGroupInfo is not autoDistribute,appId:{},groupId:{}"
                     , appId, groupId);
             return;
         }
-
+        // 组的排队数校验
+        final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
+        final Integer groupQueueNum = JedisUtils.getInt(ksRedisCommands, groupQueueNumKey);
+        if (groupQueueNum < 1) {
+            log.info("fireDistributeAssistant return, queue num is 0,appId:{},groupId:{}", appId, groupId);
+            return;
+        }
+        // 组维度的加锁，尝试自动分配
         final String lockKey = SessionLockKey.format(SessionLockKey.sessionGroupLockKey, appId
                 , groupId);
         final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
@@ -531,12 +687,8 @@ public class MessageEventHandler implements EventHandler {
                         .collect(Collectors.toList());
                 if (CollUtil.isNotEmpty(onlineAssistantList)) {
                     // 自动分配
-                    distributeAssistant = distributeAssistant(groupInfo, onlineAssistantList, session);
                     if (null != distributeAssistant) {
-                        // 移除队列
-                        ksRedisCommands.lpop(popKey);
-                        // 排队数原子性减一
-                        ksRedisCommands.decr(groupQueueNumKey);
+
                     }
                 }
             }
@@ -544,15 +696,7 @@ public class MessageEventHandler implements EventHandler {
                 log.info("fireDistributeAssistant return, queue is empty,appId:{},groupId:{}", appId, groupId);
                 return;
             }
-            final Boolean ret = sessionService.distributeSession(session);
-            if (BooleanUtil.isFalse(ret) && !ifAppointDistribute) {
-                // 操作失败补偿
-                ksRedisCommands.incr(groupQueueNumKey);
-                ksRedisCommands.rpush(popKey, sessionId);
-                return;
-            }
-            // 发送事件或异步处理
-            synToAdmin();
+
         } catch (Exception e) {
             // 控制incr操作后不能补偿的问题
             log.error("fireDistributeAssistant lock exception, appId:{},groupId:{},", appId, groupId, e);
