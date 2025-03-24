@@ -22,6 +22,9 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public SessionEntity getActiveSession(String messageServerId, String userId) {
+//        lambdaQuery()
+//                .last(" limit 1")
+//                .one();
         return null;
     }
 
@@ -69,6 +72,12 @@ public class SessionServiceImpl implements SessionService {
                 doGroupDistributeAssistant(groupInfo, assistantInfo);
             }
         }
+    }
+
+    @Override
+    public Boolean endSession(SessionEntity session) {
+        // 设置会话的结束原因和状态
+        return null;
     }
 
     // 客服自动分配，只分配一个客服组

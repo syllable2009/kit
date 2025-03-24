@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
+ * 会话信息以用户所在的targetType为主
  * @author jiaxiaopeng
  * Created on 2025-03-20 11:41
  */
@@ -35,13 +36,16 @@ public class SessionEntity {
     private String tenantId;
     // 会话服务类型：groupTag
     private String targetType;
-    // 会话服务id，会话服务类型groupTag，为groupId
+    // 会话服务id，会话服务类型groupTag，为groupId，可为空
     private String targetId;
+
+    // 组id或者技能队列id
+    private String groupId;
     // 客服id
     private String assitantId;
     // 会话的额外信息只用来同步展示，不做逻辑处理，统一存储为ManualSessionExtra的json格式，防止每次表都需要新建字段
     private String extra;
-    // 会话来源，用户发起userSend，客服发起manualSend，转接会话 forward
+    // 会话来源，用户发起userToManual，客服发起manualToUser，转接会话 forward
     private String sessionFrom;
     // 转接会话才有的
     private String beforeSessionId;
@@ -61,7 +65,7 @@ public class SessionEntity {
     // 最后一次修改时间
     private LocalDateTime updateTime;
 
-    // 结束消息id
+    // 会话开始消息id
     private String sessionFirstMessageId;
 
     // 结束消息id
@@ -108,8 +112,8 @@ public class SessionEntity {
     // 转人工后客服的回复量
     private Integer manulReplyNum;
 
-    // 用户未提问，表示一个newSession
+    // 用户未提问，针对人工会话
     private Boolean noRequest;
-    // 客服未回复，0回复
+    // 客服未回复，0回复，针对人工会话
     private Boolean noReply;
 }

@@ -28,5 +28,7 @@ public interface SessionService {
     // 会话结束，可以当做事件，也可以串行调用
     void handleManualSessionEndEvent(SessionEntity sessionEntity);
 
+    Boolean endSession(SessionEntity session);
+
 
 }
