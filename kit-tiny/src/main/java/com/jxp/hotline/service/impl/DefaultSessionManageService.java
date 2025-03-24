@@ -414,8 +414,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 assitantId));
     }
 
-    // 排队拦截
-    private boolean interceptQueueSession(AssistantGroupInfo groupInfo, Integer queueNum) {
+    private boolean validQueueLimit(AssistantGroupInfo groupInfo, Integer queueNum) {
         // 判断排队多少人，有没有设置排队过多不接单
         if (BooleanUtil.isTrue(groupInfo.getIfRejectManyQueue())) {
             if (queueNum >= groupInfo.getRejectQueueNum()) {
@@ -424,6 +423,12 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 return true;
             }
         }
+        return false;
+    }
+
+    // 排队拦截
+    private boolean interceptConfirmQueueSession(AssistantGroupInfo groupInfo, Integer queueNum) {
+
         // 排队确认拦截
         if (BooleanUtil.isTrue(groupInfo.getIfEnableConfirm())) {
             if (queueNum >= groupInfo.getConfirmNum()) {
@@ -432,7 +437,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 return true;
             }
         }
-        return true;
+        return false;
     }
 
     // 升级操作了，理论上已经算是人工了
@@ -443,7 +448,8 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 .sid(dbSession.getSid())
                 .sessionState("queue")
                 .targetType("groupTag")
-                .targetId(groupInfo.getGroupId())
+                .targetId("")
+                .groupId(groupInfo.getGroupId())
                 .build();
 
         final Boolean ret = sessionService.upgradeQueueSession(entity);
@@ -458,14 +464,19 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         ksRedisCommands.lpush(SessionLockKey.format(SessionLockKey.AppGroupQueueList, dbSession.getAppId()
                 , groupInfo.getGroupId()), entity.getSid());
 
+        doAfterUpgradeQueueSession(dbSession, groupInfo, queueNum);
+        return true;
+    }
+
+    public void doAfterUpgradeQueueSession(SessionEntity session, AssistantGroupInfo groupInfo, Integer queueNum) {
+        // 发送MQ事件或者异步同步数据
         // 排队通知消息
         if (BooleanUtil.isTrue(groupInfo.getIfNoticeManyQueue())) {
             if (queueNum > groupInfo.getNoticeNum()) {
                 // 可以排队，发送排队安抚消息，排在第n位，请耐心等待
             }
         }
-        // 发送MQ事件或者异步同步数据
-        return true;
+        synToAdmin();
     }
 
     private Boolean handleUpgradeManualSession(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo,
@@ -490,10 +501,15 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             incrSessionNum(assistantInfo.getAppId(), assistantInfo.getAssistantId());
             log.error("handleUpgradeManualSession exception,session:{},", JSONUtil.toJsonStr(session), e);
         }
+
+        doAfterUpgradeManualSession(session);
+        return true;
+    }
+
+    public void doAfterUpgradeManualSession(SessionEntity session) {
         // 发送转人工系统消息
         // 发送MQ事件或者异步同步数据
         synToAdmin();
-        return true;
     }
 
     // 会话管理
@@ -657,8 +673,11 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             }
             if (ifNeedQueue) {
                 // 排队上限拦截
+                if (validQueueLimit(groupInfo, queueNum)) {
+                    return;
+                }
                 // 排队二次确认拦截
-                if (!StrUtil.equals("userConfirm", sessionFrom) && interceptQueueSession(groupInfo, queueNum)) {
+                if (!StrUtil.equals("userConfirm", sessionFrom) && interceptConfirmQueueSession(groupInfo, queueNum)) {
                     log.info("tryDistributeManualSession return,排队拦截处理,session:{}", JSONUtil.toJsonStr(dbSession));
                     final String messageKey = processMixcardMessageToUserEvent(session, "queueConfirm", null);
                     processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
