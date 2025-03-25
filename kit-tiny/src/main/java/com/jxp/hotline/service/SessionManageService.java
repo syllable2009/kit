@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import com.jxp.hotline.domain.dto.CustomerGroupDTO;
 import com.jxp.hotline.domain.dto.DistributeAssitant;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
@@ -17,12 +18,11 @@ import com.jxp.hotline.domain.entity.SessionEntity;
 
 public interface SessionManageService {
 
-    List<AssistantGroupInfo> matchLiveGroup(MessageEvent event);
+    List<CustomerGroupDTO> matchLiveGroup(MessageEvent event);
 
     SessionEntity getLastActiveSession(String appId, String userId);
 
-    // 创建一个新会话
-    SessionEntity createNewSession(MessageEvent event);
+    SessionEntity createSession(SessionEntity session);
 
     // 记录用户的最后一条消息信息
     void recordUserLastMessage(SessionEntity session, MessageEvent event);
@@ -32,7 +32,7 @@ public interface SessionManageService {
     // 强制转接会话人
     Boolean forwardManualSession(SessionEntity session, String assistantId);
 
-    // 尝试处理分配客服的场景
+    // 尝试处理分配客服的场景，可能分配不到，如果分配到了，创建会话失败时，需要给客服补偿单应用会话数和会话总数
     void tryDistributeManualSession(SessionEntity session, AssistantGroupInfo groupInfo,
             String sessionFrom, MessageEvent event);
 

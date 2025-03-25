@@ -1,8 +1,11 @@
 package com.jxp.hotline.service.impl;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -11,8 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.collect.Lists;
 import com.jxp.hotline.constant.SessionLockKey;
+import com.jxp.hotline.domain.dto.CustomerGroupDTO;
 import com.jxp.hotline.domain.dto.DistributeAssitant;
 import com.jxp.hotline.domain.dto.MessageEvent;
+import com.jxp.hotline.domain.dto.TransferRuleDTO;
+import com.jxp.hotline.domain.dto.TransferRuleItemDTO;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.AssistantInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
@@ -25,7 +31,6 @@ import com.jxp.hotline.utils.LocalDateTimeUtil;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.BooleanUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +44,94 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class DefaultSessionManageService implements SessionManageService {
 
     @Override
-    public List<AssistantGroupInfo> matchLiveGroup(MessageEvent event) {
-        return null;
+    public List<CustomerGroupDTO> matchLiveGroup(MessageEvent event) {
+        // 匹配的规则有权重，只会找到其中一个匹配的规则
+        final String appId = event.getAppId();
+        // 获取应用下的转人工规则
+        String redisKey = SessionLockKey.format(SessionLockKey.appTransferRule, appId);
+        String ruleString = "[]";
+        if (StrUtil.isBlank(ruleString)) {
+            return Lists.newArrayList();
+        }
+        final List<TransferRuleDTO> ruleList = JSONUtil.toList(ruleString, TransferRuleDTO.class);
+        if (CollUtil.isEmpty(ruleList)) {
+            return Lists.newArrayList();
+        }
+
+        // 解析用户的文本输入
+        String userInputText = "";
+        final String userId = event.getFrom().getUserId();
+        boolean matchResult = false;
+        // 按照权重找到匹配的一个即可
+        for (TransferRuleDTO rule : ruleList) {
+            // 每个规则下有许多条件组，单个条件组内是and的关系，多个组之间是or的关系
+            matchResult = rule.getTriggerConditionList().stream()
+                    .anyMatch(triggerList -> triggerList.stream()
+                            .allMatch(e -> matchCustomRule(e, appId, userId, userInputText)));
+            if (matchResult) {
+                return StrUtil.equals("allGroup", rule.getCustomerGroupType()) ? rule.getCustomerGroupList() : rule.getCustomerGroupList();
+            }
+        }
+        return Lists.newArrayList();
+    }
+
+    // 底层使用的信息，采用全局缓存
+    private boolean matchCustomRule(TransferRuleItemDTO ruleItem, String appId, String userId, String message) {
+        final String type = ruleItem.getType();
+        switch (type) {
+            case "keywords":
+                return matchKeyWord(ruleItem, message);
+            default:
+                return false;
+        }
+    }
+
+    private boolean matchUserLabel(TransferRuleItemDTO ruleItem, String appId, String userId) {
+        Set<String> userLabelIds = null;
+        final Map<String, String> condition = ruleItem.getCondition();
+        final String userLabelIdsStr = condition.get("userLabelIds");
+        return StrUtil.split(userLabelIdsStr, ",").stream()
+                .allMatch(e -> userLabelIds.contains(e));
+    }
+
+    private boolean matchTime(TransferRuleItemDTO ruleItem, LocalTime time) {
+        final Map<String, String> condition = ruleItem.getCondition();
+        // allDay workDay nonWorkDay
+        final String dateTypeStr = condition.getOrDefault("dateType", "allDay");
+        if (!StrUtil.equals("allDay", dateTypeStr)) {
+            final boolean ifWorkDay = true;
+            if (StrUtil.equals("workDay", dateTypeStr) && !ifWorkDay) {
+                return false;
+            } else if (StrUtil.equals("nonWorkDay", dateTypeStr) && ifWorkDay) {
+                return false;
+            }
+        }
+
+        final String startTimeStr = condition.get("startTime");
+        if (StrUtil.isNotBlank(startTimeStr)) {
+            // 转localtime
+            final LocalTime startTime = LocalDateTimeUtil.stringToLocalTime(startTimeStr, "HH:mm");
+            if (startTime.compareTo(time) > 0) {
+                return false;
+            }
+        }
+        final String endTimeStr = condition.get("endTime");
+        if (StrUtil.isNotBlank(endTimeStr)) {
+            final LocalTime endTime = LocalDateTimeUtil.stringToLocalTime(endTimeStr, "HH:mm");
+            if (endTime.compareTo(time) < 0) {
+                return false;
+            }
+        }
+    }
+
+    private boolean matchKeyWord(TransferRuleItemDTO ruleItem, String inputText) {
+        final String matchingRule = ruleItem.getMatchingRule();
+        final Map<String, String> condition = ruleItem.getCondition();
+        if (StrUtil.equals("preciseMatch", matchingRule)) {
+            return StrUtil.equals(condition.get("value"), inputText);
+        } else {
+            return condition.get("value").contains(inputText);
+        }
     }
 
     @Resource
@@ -53,10 +144,30 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         return sessionService.getActiveSession(appId, userId);
     }
 
-    private SessionEntity createNewCommonSession(MessageEvent event) {
-        final String appId = event.getAppId();
+    @Override
+    public SessionEntity createSession(SessionEntity session) {
+        final SessionEntity newSession = createSessionLock(session);
+        if (null == newSession) {
+            log.error("createSession return,create fail,session:{}", JSONUtil.toJsonStr(session));
+            return null;
+        }
+        doAfterSessionCreate(newSession);
+        return newSession;
+    }
+
+    // session创建后预留的扩展接口
+    private void doAfterSessionCreate(SessionEntity session) {
+        // 同步会话，发事件来做
+//        cacheSession();
+//        synToAdmin();
+        // 缓存会话信息
+    }
+
+    // 加锁创建session底层服务
+    private SessionEntity createSessionLock(SessionEntity session) {
+        final String appId = session.getAppId();
         // 客服发给app还是用户发给app
-        final String userId = event.getFrom().getUserId();
+        final String userId = session.getUserId();
 
         // 加锁：需要和升级会话加锁的key一致
         final String lockKey = SessionLockKey.format(SessionLockKey.sessionLockKey, appId
@@ -64,72 +175,27 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
         final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
         if (StrUtil.isBlank(requestId)) {
-            log.error("createNewSession return,lock fail,event:{}", JSONUtil.toJsonStr(event));
+            log.error("createSessionLock return,lock fail,event:{}", JSONUtil.toJsonStr(session));
             return null;
         }
-        final String sessionType = event.getSessionType();
-        boolean ifUserSend = StrUtil.equals("p2p", sessionType);
-        final String messageKey = event.getInfo().getMessageKey();
-        // 创建对象，首先永远都是机器人
-        final Long timestamp = event.getTimestamp();
-        final LocalDateTime messageTime = LocalDateTimeUtil.timestampToLocalDateTime(timestamp);
-        SessionEntity newSession = SessionEntity.builder()
-                .appId(event.getAppId())
-                .robotId(event.getTo().getUserId())
-                .sid(IdUtil.fastSimpleUUID())
-                .userRequestManualNum(0)
-                .createTime(messageTime)
-                .updateTime(messageTime)
-                .noRequest(true)
-                .noReply(true)
-                .sessionFirstMessageId(messageKey)
-                .build();
-
-        if (ifUserSend) {
-            newSession.setSessionFrom("userToManual");
-            newSession.setSessionType("bot");
-            newSession.setSessionState("botChat");
-            newSession.setUserRequestRobotNum(1);
-            newSession.setUserFistMessageId(messageKey);
-            newSession.setUserFistMessageTime(messageTime);
-        } else {
-            newSession.setSessionFrom("manualToUser");
-            newSession.setSessionType("manual");
-            newSession.setSessionState("muanualChat");
-            newSession.setNoReply(false);
-            newSession.setManulReplyNum(1);
-            newSession.setManulFirstMessageId(messageKey);
-            newSession.setManulFirstMessageTime(messageTime);
-        }
         try {
-            // 再去查一遍db
-            final SessionEntity activeSession = this.getLastActiveSession(event.getAppId(),
-                    userId);
+            // 加锁再去查一遍db，防止并发
+            final SessionEntity activeSession = this.getLastActiveSession(appId, userId);
             if (null != activeSession) {
                 return activeSession;
             }
-
-            final Boolean ret = sessionService.createSession(newSession);
+            final Boolean ret = sessionService.createSession(session);
             if (BooleanUtil.isFalse(ret)) {
-                log.error("createNewSession return,createSession fail,messageServerId:{},userId:{}", JSONUtil.toJsonStr(newSession));
+                log.error("createSessionLock return,createSession fail,session:{}", JSONUtil.toJsonStr(session));
                 return null;
             }
         } catch (Exception e) {
-            log.error("createNewSession lock exception, event:{},", JSONUtil.toJsonStr(event), e);
+            log.error("createNewSession lock exception, session:{},", JSONUtil.toJsonStr(session), e);
             return null;
         } finally {
             JedisUtils.releaseLockSafe(ksRedisCommands, lockKey, requestId);
         }
-        return newSession;
-    }
-
-    @Override
-    public SessionEntity createNewSession(MessageEvent event) {
-        final SessionEntity newRobotSession = createNewCommonSession(event);
-        if (null != newRobotSession) {
-            doAfterSessionCreate(newRobotSession);
-        }
-        return newRobotSession;
+        return session;
     }
 
     @Override
@@ -142,12 +208,6 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         // 只记录用户发给app的消息，会话以用户视角为准
     }
 
-    public void doAfterSessionCreate(SessionEntity session) {
-        // 同步会话，发事件来做
-//        cacheSession();
-//        synToAdmin();
-        // 缓存会话信息
-    }
 
     @Override
     public void endSession(SessionEntity session) {
@@ -156,7 +216,8 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         doAfterSessionEnd(session);
     }
 
-    public void doAfterSessionEnd(SessionEntity session) {
+    // session结束后预留的扩展接口
+    private void doAfterSessionEnd(SessionEntity session) {
         // 同步给三方
         synToAdmin();
         // 清掉缓存
@@ -196,88 +257,8 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         return true;
     }
 
-    private void tryDistributeManualSession(MessageEvent event, SessionEntity session, AssistantGroupInfo groupInfo,
-            String sessionFrom) {
-
-        if (BooleanUtil.isFalse(groupInfo.getWorking())) {
-            // 发送客服组不在工作时间留言消息
-            log.info("tryDistributeManualSession return,发送客服组不在工作时间留言消息,event:{}", JSONUtil.toJsonStr(event));
-            return;
-        }
-        // 查询组内的客服列表
-        List<AssistantInfo> assistantList = Lists.newArrayList();
-        final List<AssistantInfo> onlineAssistantList = assistantList.stream()
-                .filter(e -> StrUtil.equalsAny(e.getState(), "online", "busy"))
-                .collect(Collectors.toList());
-
-        if (CollUtil.isEmpty(onlineAssistantList)) {
-            log.info("tryDistributeManualSession return,无客服在线,发送留言消息,event:{}", JSONUtil.toJsonStr(event));
-            return;
-        }
-        // 加锁处理，如果有排队则一定进入排队
-        // 如果没有排队，判断是否需要加入到排队中，不排队直接分配客服，分配不到进入排队
-        final String lockKey = SessionLockKey.format(SessionLockKey.sessionGroupLockKey, event.getAppId()
-                , groupInfo.getGroupId());
-        final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
-        if (StrUtil.isBlank(requestId)) {
-            log.error("tryDistributeManualSession return,加锁失败,event:{}", JSONUtil.toJsonStr(event));
-            return;
-        }
-        // 再去查一遍db
-        final SessionEntity dbSession = sessionService.getSessionBySid(session.getSid());
-        try {
-            if (null == dbSession) {
-                // 会话恰好结束了，忽略掉，因为在会话管理算到这个会话了，会话结束的时候也要加锁
-                log.info("tryDistributeManualSession return,会话为空，数据异常,event:{}", JSONUtil.toJsonStr(event));
-                return;
-            }
-            // 会话校验
-            if (StrUtil.equals("manual", dbSession.getSessionType())) {
-                // 出现并发，已经是人工了
-                log.error("tryDistributeManualSession return,并发转发到人工处理,event:{}", JSONUtil.toJsonStr(event));
-                // 将此消息转发到人工处理
-//                manualService.processUserMessage(dbSession, event);
-                return;
-            }
-
-            // 设置会话升级的来源
-            dbSession.setSessionFrom(sessionFrom);
-
-            final Integer queueNum = JedisUtils.getInt(ksRedisCommands, SessionLockKey.format(SessionLockKey.AppGroupQueueNum, event.getAppId(),
-                    groupInfo.getGroupId()));
-
-            // 如果有排队先进排队，因为分配客服是一个比较重的操作
-            boolean ifNeedQueue = queueNum > 0;
-            // 分配信息
-            DistributeAssitant distribute = null;
-            // 不排队的话去尝试分配客服
-            if (!ifNeedQueue) {
-                distribute = distributeAssistant(groupInfo, onlineAssistantList, dbSession);
-                if (BooleanUtil.isFalse(distribute.getDistributeResult())) {
-                    // 没有分配到客服，去排队
-                    // 创建排队session
-                    ifNeedQueue = true;
-                }
-            }
-            if (ifNeedQueue) {
-                // 排队拦截
-                if (interceptQueueSession(groupInfo, queueNum)) {
-                    log.info("tryDistributeManualSession return,排队拦截处理,event:{}", JSONUtil.toJsonStr(event));
-                    return;
-                }
-                // 取分配客服，如果分配到客服，客服全局会话数和客服本应用会话数已经+1了
-                handleUpgradeQueueSession(groupInfo, queueNum, dbSession);
-            } else {
-                // 创建一个分配会话的session
-                handleUpgradeManualSession(groupInfo, distribute.getAssistantInfo(), dbSession);
-            }
-
-        } catch (Exception e) {
-            // 控制incr操作后不能补偿的问题
-            log.error("tryDistributeManualSession lock exception, event:{},", JSONUtil.toJsonStr(event), e);
-        } finally {
-            JedisUtils.releaseLockSafe(ksRedisCommands, lockKey, requestId);
-        }
+    // 会话转接后预留的扩展接口
+    private void doAfterSessionForward(SessionEntity session) {
     }
 
     // 分配会话，包装分配的结果和分配的详细信息

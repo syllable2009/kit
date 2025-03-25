@@ -2,7 +2,9 @@ package com.jxp.hotline.utils;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /**
  * @author jiaxiaopeng
@@ -19,5 +21,11 @@ public class LocalDateTimeUtil {
 
     public static LocalDateTime now() {
         return LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
+    }
+
+    // 将时间字符串按指定格式转换为 LocalTime  "09:15" "HH:mm"
+    public static LocalTime stringToLocalTime(String timeStr, String pattern) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+        return LocalTime.parse(timeStr, formatter);
     }
 }

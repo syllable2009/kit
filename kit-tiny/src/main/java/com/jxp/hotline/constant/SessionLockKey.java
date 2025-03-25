@@ -23,6 +23,8 @@ public class SessionLockKey {
     public static String AssitantGlobelSessionNum = "hotline:globel:session:num:{}";
     // 客服但有用会话数，groupId：assitantId
     public static String AssitantAppSessionNum = "hotline:app:session:num:{}:{}";
+    // 应用号转人工规则缓存
+    public static String appTransferRule = "hotline:app:transfer:rule:{}";
 
     public static String format(String key, Object... params) {
         return StrUtil.format(key, params);

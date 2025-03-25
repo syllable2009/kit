@@ -1,5 +1,6 @@
 package com.jxp.hotline.handler.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -9,11 +10,13 @@ import com.jxp.hotline.config.SpringUtils;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
+import com.jxp.hotline.domain.entity.SessionEntity.SessionEntityBuilder;
 import com.jxp.hotline.handler.EventHandler;
 import com.jxp.hotline.service.SessionManageService;
 import com.jxp.hotline.utils.LocalDateTimeUtil;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -62,21 +65,16 @@ public class MessageEventHandler implements EventHandler {
         SessionEntity activeSession = manualSessionManageService.getLastActiveSession(messageServerId, userId);
         if (null == activeSession) {
             // 没有会话，需要加锁创建会话
-            log.info("message handler,create new robot session,messageServerId:{},userId:{}", messageServerId,
+            log.info("message handler,create new session,messageServerId:{},userId:{}", messageServerId,
                     userId);
-            activeSession = robotSessionManageService.createNewSession(event);
+            activeSession = robotSessionManageService.createSession(generateNewSession(event));
             // 没有创建成功会话直接返回
             if (null == activeSession) {
-                log.error("message handler return,no found active session,messageServerId:{},userId:{}",
-                        messageServerId,
-                        userId);
+                log.error("message handler return,create new session fail,messageServerId:{},userId:{}",
+                        messageServerId, userId);
                 return;
             }
         }
-//        else {
-//            // 记录会话的last相关信息，和下面机器人重复了
-//            robotSessionManageService.recordUserLastMessage(activeSession, event);
-//        }
 
         // 如果处于人工会话中则直接发给人工
         if (StrUtil.equals("manual", activeSession.getSessionType())) {
@@ -115,5 +113,36 @@ public class MessageEventHandler implements EventHandler {
             List<AssistantGroupInfo> assistantGroups) {
         // 构造参数
         return robotSessionManageService.processMixcardMessageToUserEvent(session, "userChooseGroupMessage", null);
+    }
+
+    private SessionEntity generateNewSession(MessageEvent event) {
+        final Long timestamp = event.getTimestamp();
+        final LocalDateTime now = LocalDateTimeUtil.timestampToLocalDateTime(timestamp);
+        final SessionEntityBuilder builder = SessionEntity.builder()
+                .appId(event.getAppId())
+                .userId(event.getFrom().getUserId())
+                .sid(IdUtil.fastSimpleUUID())
+                .createTime(now)
+                .updateTime(now)
+                .noRequest(true)
+                .noReply(true)
+                .userRequestRobotNum(0)
+                .userRequestManualNum(0)
+                .manulReplyNum(0);
+        final String sessionType = event.getSessionType();
+        boolean ifUserSend = StrUtil.equals("p2p", sessionType);
+        if (ifUserSend) {
+            // 用户发起的会话，区分userToManual/userConfirm
+            builder.sessionFrom("userToManual")
+                    .sessionType("bot")
+                    .sessionState("botChat");
+        } else {
+            // 客服发起的会话，直接为人工会话
+            builder.sessionFrom("manualToUser")
+                    .sessionType("manual")
+                    .sessionState("muanualChat");
+
+        }
+        return builder.build();
     }
 }
