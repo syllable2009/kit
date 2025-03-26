@@ -5,8 +5,10 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
+import com.google.common.collect.Lists;
 import com.jxp.hotline.annotation.EventType;
 import com.jxp.hotline.config.SpringUtils;
+import com.jxp.hotline.domain.dto.CustomerGroupDTO;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
@@ -86,14 +88,17 @@ public class MessageEventHandler implements EventHandler {
             return;
         }
         // 否则进行转人工规则匹配，匹配到组，如果这里需要详细，也可以封装返回一个详细DTO对象
-        final List<AssistantGroupInfo> assistantGroups = robotSessionManageService.matchLiveGroup(event);
-        if (CollUtil.isEmpty(assistantGroups)) {
+        final List<CustomerGroupDTO> customerGroupDTOS = robotSessionManageService.matchLiveGroup(event);
+        if (CollUtil.isEmpty(customerGroupDTOS)) {
             //进入机器人会话
             robotSessionManageService.processUserMessageToAppEvent(activeSession, event);
-        } else if (1 == assistantGroups.size()) {
+        } else if (1 == customerGroupDTOS.size()) {
+            final CustomerGroupDTO customerGroupDTO = customerGroupDTOS.get(0);
+            AssistantGroupInfo assistantGroupInfo = null;
             // 尝试开始分配客服转人工
-            robotSessionManageService.tryDistributeManualSession(activeSession, assistantGroups.get(0), "userToManual", event);
+            robotSessionManageService.tryDistributeManualSession(activeSession, assistantGroupInfo, "userToManual", event);
         } else {
+            final List<AssistantGroupInfo> assistantGroups = Lists.newArrayList();
             // 发送选择技能队列卡片，此时还是机器人会话，选择卡片以后调用distributeManualSession方法
             final String messageKey = sendUserChooseGroupMessage(activeSession, event, assistantGroups);
             if (StrUtil.isBlank(messageKey)) {
