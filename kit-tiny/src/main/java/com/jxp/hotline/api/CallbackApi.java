@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jxp.hotline.config.CardCallBackHandlerFactory;
 import com.jxp.hotline.domain.dto.CardEvent;
 import com.jxp.hotline.domain.dto.MessageEvent;
+import com.jxp.hotline.handler.AbstractCardCallBackHandler;
 import com.jxp.hotline.handler.EventHandler;
 
 import cn.hutool.json.JSONUtil;
@@ -30,6 +32,8 @@ public class CallbackApi {
 
     @Resource
     private Map<String, EventHandler> eventHandlerMap;
+    @Resource
+    private CardCallBackHandlerFactory cardCallBackHandlerFactory;
 
     @PostMapping("/message")
     public ResponseEntity<Boolean> messageCallback(@RequestBody MessageEvent event) {
@@ -56,8 +60,14 @@ public class CallbackApi {
     public ResponseEntity<Boolean> cardCallback(@RequestBody CardEvent event) {
         log.info("cardCallback,event:{}", JSONUtil.toJsonStr(event));
         // 消息去重
-        // 落库如果有必要，顺序入队列：削峰
-        // 模拟消费
+        // 从db查询原始消息，获取消息的bizId
+        Object entity = null;
+        final AbstractCardCallBackHandler handler = cardCallBackHandlerFactory.getHandler("");
+        if (null == handler) {
+            return ResponseEntity.ok(false);
+        }
+        final Map<String, String> actionMap = event.getInfo().getActionValue();
+        handler.triggerAction(actionMap.get("actionId"), event.getInfo(), entity);
         return ResponseEntity.ok(true);
     }
 }
