@@ -29,7 +29,7 @@ public class SessionEntity {
     private String sessionType;
     // -1=机器人聊天botChat，queue=排队 muanualChat=人工聊天 end=结束
     private String sessionState;
-    // 如果结束，表示结束原因，客服关闭 manualClose, 2:用户关闭userClose, 3:用户超时 userTimeout, 4:客服超时 manualTimeout
+    // 如果结束，表示结束原因，客服关闭 manualClose, 2:用户关闭userClose, 3:用户超时 userTimeout, 4:客服超时 manualTimeout 转接transfer
     private String cause;
     // 用户id
     private String userId;
@@ -51,7 +51,7 @@ public class SessionEntity {
     // 转接会话才有的
     private String beforeSessionId;
 
-    // 人工会话才有，表示自动分配，客服领取
+    // 人工会话才有，表示自动分配 autoDistribute，客服领取 manualClaim
     private String sessionReceiveType;
 
     // 会话的创建时间，用户可以发起，客服也可以发起会话

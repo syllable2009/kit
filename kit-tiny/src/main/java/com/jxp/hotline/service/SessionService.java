@@ -23,7 +23,7 @@ public interface SessionService {
     // 升级为人工会话
     Boolean upgradeManualSession(SessionEntity sessionEntity);
 
-    // 分配会话
+    // 分配会话，仅更新相关字段
     Boolean distributeSession(SessionEntity sessionEntity);
 
     // 会话开始，可以当做事件，也可以串行调用

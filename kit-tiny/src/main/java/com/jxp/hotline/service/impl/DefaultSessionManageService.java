@@ -199,7 +199,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     @Override
-    public void endSession(SessionEntity session) {
+    public Boolean endSession(SessionEntity session) {
         final String appId = session.getAppId();
         // 客服发给app还是用户发给app
         final String userId = session.getUserId();
@@ -209,7 +209,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final String requestId = JedisUtils.tryLock(jedisCommands, lockKey);
         if (StrUtil.isBlank(requestId)) {
             log.error("endSession return,lock fail,session:{}", JSONUtil.toJsonStr(session));
-            return;
+            return false;
         }
         SessionEntity dbSession = null;
         try {
@@ -217,7 +217,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             dbSession = sessionService.getSessionBySid(session.getSid());
             if (StrUtil.equals("end", dbSession.getSessionState())
                     || !StrUtil.equals(session.getSessionType(), dbSession.getSessionType())) {
-                return;
+                return false;
             }
             final LocalDateTime now = LocalDateTimeUtil.now();
             dbSession.setUpdateTime(now);
@@ -227,11 +227,11 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             final Boolean ret = sessionService.endSession(dbSession);
             if (BooleanUtil.isFalse(ret)) {
                 log.error("endSession return,result false,session:{}", JSONUtil.toJsonStr(session));
-                return;
+                return false;
             }
         } catch (Exception e) {
             log.error("endSession exception, session:{},", JSONUtil.toJsonStr(session), e);
-            return;
+            return false;
         } finally {
             JedisUtils.releaseLockSafe(jedisCommands, lockKey, requestId);
         }
@@ -243,12 +243,42 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         } else if (StrUtil.equals("botChat", session.getSessionType())) {
             doAfterEndRobotSession(dbSession);
         } else {
+            log.info("endSession return,unkown sesstionType,session:{}", JSONUtil.toJsonStr(dbSession));
+        }
+        return true;
+    }
+
+    // 客服组自动分配
+    private void groupDistributeAssistantEvent(SessionEntity session) {
+        final String groupId = session.getGroupId();
+        AssistantGroupInfo groupInfo = null;
+        if (BooleanUtil.isFalse(groupInfo.getAutoDistribute())) {
             return;
         }
+        AssistantInfo assistantInfo = null;
+        DistributeAssitant distribute = this.doGroupDistributeAssistant(groupInfo, assistantInfo);
+        if (BooleanUtil.isFalse(distribute.getDistributeResult())) {
+            return;
+        }
+        // 分到的新会话
+        final String sid = distribute.getSessionId();
+        // 查询会话信息
+        SessionEntity newSession = SessionEntity.builder().build();
+        if (null == newSession) {
+            return;
+        }
+        final Boolean ret = this.distributeQueueSession(SessionEntity.builder()
+                .sid(sid)
+                .appId(newSession.getAppId())
+                .targetType(newSession.getTargetType())
+                .targetId(newSession.getTargetId())
+                .assitantId(distribute.getAssistantInfo().getAssistantId())
+                .build());
     }
 
     // session结束后预留的扩展接口
     private void doAfterManualSessionEnd(SessionEntity session) {
+        groupDistributeAssistantEvent(session);
         // 同步给三方
         synToAdmin();
         // 清掉缓存
@@ -264,16 +294,17 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         synToAdmin();
     }
 
-    private Boolean forwardManualSession(SessionEntity session, String assistantId) {
+    // 转接其实就是调用结束会话和创建会话，单考虑到通知消息和会话数限制，这里调用原子操作再重新集成一遍
+    private SessionEntity forwardManualSession(SessionEntity session, String assistantId) {
         if (!StrUtil.equals("manual", session.getSessionType())) {
-            return false;
+            return null;
         }
         String oldAssitant = session.getAssitantId();
 
         AssistantInfo assistantInfo = null;
         if (null == assistantInfo) {
             log.info("doAppointDistributeAssistant return, assistantInfo is null");
-            return false;
+            return null;
         }
 
         // 转接直接调整人还是先结束老会话，创建一个新的会话，这里直接调整
@@ -286,17 +317,18 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                     .build();
             boolean ret = false;
             if (BooleanUtil.isFalse(ret)) {
-                return false;
+                return null;
             }
             // 给指定人分配会话
             incrSessionNum(session.getAppId(), assistantInfo.getAssistantId());
             decrSessionNum(session.getAppId(), oldAssitant);
-            doAfterSessionForward(session);
+            return forward;
         } else {
             // 结束老会话
-            Boolean ifEndOldSession = false;
+            session.setCause("transfer");
+            Boolean ifEndOldSession = endSession(session);
             if (BooleanUtil.isFalse(ifEndOldSession)) {
-                return false;
+                return null;
             }
             // 调整服务媒介
             String targetType = "groupTag";
@@ -315,18 +347,18 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             newSession = createSessionLock(newSession);
             if (null == newSession) {
                 log.error("createSession return,create fail,session:{}", JSONUtil.toJsonStr(session));
-                return false;
+                return null;
             }
-            // 给指定人分配会话
+            // 给指定人分配会话，指定人减，可以突破上限
             incrSessionNum(newSession.getAppId(), newSession.getAssitantId());
             decrSessionNum(session.getAppId(), assistantInfo.getAssistantId());
-            doAfterSessionForward(session, newSession);
+            return newSession;
         }
-        return true;
     }
 
     // 会话转接后预留的扩展接口
     private void doAfterSessionForward(SessionEntity oldSession, SessionEntity newSession) {
+        // 给客服发送新客服接入的提示，而不发送会话结束
         // 新会话发送历史记录
         synToAdmin();
     }
@@ -767,7 +799,13 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     @Override
-    public void distributeQueueSession(SessionEntity session) {
+    public Boolean distributeQueueSession(SessionEntity session) {
+        final LocalDateTime now = LocalDateTimeUtil.now();
+        // 此处不需要加锁
+        session.setSessionState("muanualChat");
+        session.setUpdateTime(now);
+        session.setTakeOverTime(now);
+        session.setSessionReceiveType("autoDistribute");
         final Boolean ret = sessionService.distributeSession(session);
         if (BooleanUtil.isFalse(ret)) {
             // 操作失败补偿
@@ -780,41 +818,17 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             jedisCommands.rpush(popKey, session.getSid());
             // 排队的数据回滚
             incrSessionNum(groupId, session.getAssitantId());
-        } else {
-            // 发送事件或异步处理
-            synToAdmin();
         }
-    }
-
-    // 处理会话结束自动分配事件，转接给别人相当于自己的会话结束，别人可以直接分配
-    @Override
-    public void handleManualSessionEndEvent(SessionEntity dbSession) {
-        // 这个会话结束了
-        AssistantGroupInfo groupInfo = null;
-        AssistantInfo assistantInfo = null;
-        DistributeAssitant distribute = this.doGroupDistributeAssistant(groupInfo, assistantInfo);
-        if (BooleanUtil.isTrue(distribute.getDistributeResult())) {
-            // 分到的新会话
-            final String sid = distribute.getSessionId();
-            SessionEntity newSession = SessionEntity.builder().build();
-            if (null == newSession) {
-
-            }
-            // 查询新会话
-            this.distributeQueueSession(SessionEntity.builder()
-                    .sid(sid)
-                    .appId(newSession.getAppId())
-                    .targetType(newSession.getTargetType())
-                    .targetId(newSession.getTargetId())
-                    .assitantId(distribute.getAssistantInfo().getAssistantId())
-                    .build());
-        }
+        return ret;
     }
 
     @Override
-    public void handleForwardSessionEvent(String sessionId, String assitantId) {
+    public Boolean handleForwardSessionEvent(String sessionId, String assitantId) {
         final SessionEntity session = sessionService.getSessionBySid(sessionId);
-        this.forwardManualSession(session, assitantId);
+        final SessionEntity newSession = forwardManualSession(session, assitantId);
+        if (null != newSession) {
+            doAfterSessionForward(session, newSession);
+        }
     }
 
     @Override

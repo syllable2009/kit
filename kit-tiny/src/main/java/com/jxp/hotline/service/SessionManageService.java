@@ -38,26 +38,25 @@ public interface SessionManageService {
     // 机器人向客服发送消息：提醒等系统消息，只会更新endMessageKey
     void processRobotMessageToManualEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
 
-    // 结束会话，结束原因，操作人
-    void endSession(SessionEntity session);
+    // 操作：结束会话，结束原因，操作人
+    Boolean endSession(SessionEntity session);
 
-    // 处理强制转接客服操作，可以突破转接客服上线
-    void handleForwardSessionEvent(String sessionId, String assitantId);
+    // 操作：处理强制转接客服操作，可以突破转接客服上线
+    Boolean handleForwardSessionEvent(String sessionId, String assitantId);
 
     // 尝试处理分配客服的场景，可能分配不到，如果分配到了，创建会话失败时，需要给客服补偿单应用会话数和会话总数
     void tryDistributeManualSession(SessionEntity session, AssistantGroupInfo groupInfo,
             String sessionFrom, MessageEvent event);
 
     // 在组里尝试分配该客服，或者指定客服，如果指定客服，则只会给该客服分配
-    // 适合客服上线场景调用
     DistributeAssitant doGroupDistributeAssistant(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo);
 
     // 分配排队会话，分配失败会补偿
-    void distributeQueueSession(SessionEntity session);
+    Boolean distributeQueueSession(SessionEntity session);
 
-    // 处理会话结束事件
-    void handleManualSessionEndEvent(SessionEntity dbSession);
-
-    // 消费客服上线事件，客服上线会打满直至饱和，用户的上线操作也会触发给其他在线客服分配
+    // 事件：消费客服上线事件，客服上线会打满直至饱和，用户的上线操作也会触发给其他在线客服分配
     void handleAssitantOnlineEvent(String assitantId);
+
+    // 操作：领取排队会话
+    Boolean claimQueueSession(String sessionId);
 }
