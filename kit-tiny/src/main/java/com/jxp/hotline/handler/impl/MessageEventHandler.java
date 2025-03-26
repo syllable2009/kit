@@ -84,14 +84,14 @@ public class MessageEventHandler implements EventHandler {
             log.info("message handler,sendUserMessageToLiveCustomer,messageServerId:{},userId:{}", appId,
                     userId);
             // 用户消息发给客服
-            manualSessionManageService.processUserMessageToAppEvent(activeSession, event);
+            manualSessionManageService.processUserMessageToManualEvent(activeSession, event);
             return;
         }
         // 否则进行转人工规则匹配，匹配到组，如果这里需要详细，也可以封装返回一个详细DTO对象
         final List<CustomerGroupDTO> customerGroupDTOS = robotSessionManageService.matchLiveGroup(event);
         if (CollUtil.isEmpty(customerGroupDTOS)) {
             //进入机器人会话
-            robotSessionManageService.processUserMessageToAppEvent(activeSession, event);
+            robotSessionManageService.processUserMessageToRobotEvent(activeSession, event);
         } else if (1 == customerGroupDTOS.size()) {
             final CustomerGroupDTO customerGroupDTO = customerGroupDTOS.get(0);
             AssistantGroupInfo assistantGroupInfo = null;

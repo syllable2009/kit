@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.collect.Lists;
 import com.jxp.hotline.constant.SessionLockKey;
+import com.jxp.hotline.domain.dto.BotConfig;
 import com.jxp.hotline.domain.dto.CustomerGroupDTO;
 import com.jxp.hotline.domain.dto.DistributeAssitant;
 import com.jxp.hotline.domain.dto.MessageEvent;
@@ -22,6 +23,7 @@ import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.AssistantInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
 import com.jxp.hotline.domain.entity.SessionEntity.SessionEntityBuilder;
+import com.jxp.hotline.service.MessageService;
 import com.jxp.hotline.service.SessionManageService;
 import com.jxp.hotline.service.SessionService;
 import com.jxp.hotline.utils.JedisUtils;
@@ -41,6 +43,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class DefaultSessionManageService implements SessionManageService {
+
+    @Resource
+    private MessageService messageService;
 
     @Override
     public List<CustomerGroupDTO> matchLiveGroup(MessageEvent event) {
@@ -197,17 +202,6 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         }
         return session;
     }
-
-    @Override
-    public void recordUserLastMessage(SessionEntity session, MessageEvent event) {
-
-        if (StrUtil.equals("p2p", event.getSessionType())) {
-            // 判断是用户发给app
-            processUserMessageToAppEvent(session, event);
-        }
-        // 只记录用户发给app的消息，会话以用户视角为准
-    }
-
 
     @Override
     public void endSession(SessionEntity session) {
@@ -779,46 +773,95 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     @Override
-    public void processUserMessageToAppEvent(SessionEntity session, MessageEvent event) {
-        // 用户发给客服的消息
+    public void processUserMessageToManualEvent(SessionEntity session, MessageEvent event) {
+        if (StrUtil.equals("bot", session.getSessionType())) {
+            return;
+        }
+
         final String messageKey = event.getInfo().getMessageKey();
         final LocalDateTime messageTime = LocalDateTimeUtil.timestampToLocalDateTime(event.getTimestamp());
-        if (StrUtil.isBlank(messageKey)) {
+
+        // 用户发给客服的消息
+        final String assitantId = session.getAssitantId();
+        String forwardMessageKey = messageService.sendMessage(event.getAppId(), null);
+        // 消息转发
+        if (StrUtil.isBlank(forwardMessageKey)) {
             log.info("processUserMessageToAppEvent return,messageKey is blank,session:{}", JSONUtil.toJsonStr(session));
             return;
         }
-        doAfterUserMessageToApp(session, messageKey, messageTime);
+        doAfterUserMessageToManual(session, messageKey, messageTime);
+
     }
 
-    private void doAfterUserMessageToApp(SessionEntity session, String messageKey, LocalDateTime messageTime) {
-        // 根据用户的会话状态更新不同的字段
+    private void doAfterUserMessageToManual(SessionEntity session, String messageKey, LocalDateTime messageTime) {
         // LastMessageId根据时间判断，可以和最后一条消息来判断
         final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
-                .updateTime(messageTime)
+                .updateTime(LocalDateTime.now())
                 .sessionEndMessageId(messageKey)
                 .userLastMessageId(messageKey)
-                .userLastMessageTime(messageTime);
-        if (StrUtil.equals("manual", session.getSessionType())) {
-            // 人工会话状态
-            builder.userRequestManualNum(1);
-            if (BooleanUtil.isTrue(session.getNoRequest())) {
-                builder.noRequest(false)
-                        .userFistMessageId(messageKey)
-                        .userFistMessageTime(messageTime);
-            }
-        } else {
-            // 机器人会话状态
-            builder.userRequestRobotNum(1);
+                .userLastMessageTime(messageTime)
+                .userRequestManualNum(1);
+
+        if (BooleanUtil.isTrue(session.getNoRequest())) {
+            builder.noRequest(false)
+                    .userFistMessageId(messageKey)
+                    .userFistMessageTime(messageTime);
         }
         sessionService.userUpdateSession(builder.build());
+    }
+
+    private BotConfig getBotConfig(String appId) {
+        return BotConfig.builder()
+                .botType("agent")
+                .build();
+    }
+
+    @Override
+    public void processUserMessageToRobotEvent(SessionEntity session, MessageEvent event) {
+        if (StrUtil.equals("manual", session.getSessionType())) {
+            return;
+        }
+        // 文本解析，机器人只支持文本消息
+        String messageType = event.getInfo().getMessageType();
+        String userInput = "";
+        BotConfig botConfig = getBotConfig(session.getAppId());
+        // 是否开启智能助理
+        if (botConfig.isAgent()) {
+
+        } else {
+
+        }
+        //查询之前聊天的机器人会话继续
+        String robotSessionId = "";
+        // robotId和人生成一个空的卡片发送
+        String endMessageKey = messageService.sendMessage(session.getAppId(), null);
+        // 调用机器人不断获取结果并不断刷新，直到结束
+
+        if (StrUtil.isNotBlank(endMessageKey)) {
+            doAfterUserMessageToRobot(session, endMessageKey, LocalDateTimeUtil.now());
+        }
+    }
+
+    private void doAfterUserMessageToRobot(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+        // LastMessageId根据时间判断，可以和最后一条消息来判断
+        final SessionEntity build = SessionEntity.builder()
+                .sid(session.getSid())
+                .updateTime(LocalDateTime.now())
+                .sessionEndMessageId(messageKey)
+                .userLastMessageId(messageKey)
+                .userLastMessageTime(messageTime)
+                .userRequestRobotNum(1)
+                .build();
+
+        sessionService.userUpdateSession(build);
     }
 
     @Override
     public void processManualMessageToUserEvent(SessionEntity session, MessageEvent event) {
         // 客服的消息发给用户
         final LocalDateTime now = LocalDateTimeUtil.now();
-        String messageKey = null;
+        String messageKey = messageService.sendMessage(session.getAppId(), null);
         if (StrUtil.isBlank(messageKey)) {
             log.info("processManualMessageToUserEvent return,messageKey is blank,session:{}", JSONUtil.toJsonStr(session));
             return;
@@ -871,14 +914,14 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         sessionService.manualUpdateSession(sessionBuilder.build());
     }
 
-    @Override
-    public String processNoticeMessageToUserEvent(SessionEntity session, String templateId,
+
+    private String processNoticeMessageToUserEvent(SessionEntity session, String templateId,
             Map<String, String> paramId) {
         return null;
     }
 
-    @Override
-    public String processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId) {
+
+    private String processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId) {
         return null;
     }
 }

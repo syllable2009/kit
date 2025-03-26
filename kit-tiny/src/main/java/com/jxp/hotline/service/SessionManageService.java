@@ -2,7 +2,6 @@ package com.jxp.hotline.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import com.jxp.hotline.domain.dto.CustomerGroupDTO;
 import com.jxp.hotline.domain.dto.DistributeAssitant;
@@ -24,9 +23,13 @@ public interface SessionManageService {
 
     SessionEntity createSession(SessionEntity session);
 
-    // 记录用户的最后一条消息信息
-    void recordUserLastMessage(SessionEntity session, MessageEvent event);
+    // 处理用户发给人工客服的消息，只能是人工会话
+    void processUserMessageToManualEvent(SessionEntity session, MessageEvent event);
 
+    // 处理用户发给机器人的消息，只能是机器人会话
+    void processUserMessageToRobotEvent(SessionEntity session, MessageEvent event);
+
+    // 结束会话，结束原因，操作人
     void endSession(SessionEntity session);
 
     // 强制转接会话人
@@ -52,21 +55,12 @@ public interface SessionManageService {
     // 消费客服上线事件，客服上线会打满直至饱和，用户的上线操作也会触发给其他在线客服分配
     void handleAssitantOnlineEvent(String assitantId);
 
-    // 用户给消息号发送消息
-    void processUserMessageToAppEvent(SessionEntity session, MessageEvent event);
-
-    // 客服给用户发送，需要记录转发以后的messageKey
+    // 客服给用户发送消息，需要记录转发以后的messageKey
     void processManualMessageToUserEvent(SessionEntity session, MessageEvent event);
 
-    // 机器人向用户发送消息：安抚，提醒等
+    // 机器人向用户发送消息：安抚，提醒等系统消息
     void processRobotMessageToUserEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
 
-    // 机器人向客服发送消息：提醒等
+    // 机器人向客服发送消息：提醒等系统消息
     void processRobotMessageToManualEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
-
-    // 机器人给用户发送系统消息
-    String processNoticeMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
-
-    // 机器人给用户发送卡片消息
-    String processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
 }
