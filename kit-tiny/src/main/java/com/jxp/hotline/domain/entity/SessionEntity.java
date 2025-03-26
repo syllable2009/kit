@@ -94,6 +94,9 @@ public class SessionEntity {
     // 转人工后用户的提问量
     private Integer userRequestManualNum;
 
+    // 用户未提问人工，针对转人工之后
+    private Boolean noRequest;
+
     /**
      * 客服的统计信息
      */
@@ -113,8 +116,6 @@ public class SessionEntity {
     // 转人工后客服的回复量
     private Integer manulReplyNum;
 
-    // 用户未提问，针对人工会话
-    private Boolean noRequest;
     // 客服未回复，0回复，针对人工会话
     private Boolean noReply;
 }

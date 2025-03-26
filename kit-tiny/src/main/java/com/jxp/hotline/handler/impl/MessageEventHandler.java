@@ -61,19 +61,19 @@ public class MessageEventHandler implements EventHandler {
         }
 
         // 用户对app的消息
-        final String messageServerId = event.getAppId();
+        final String appId = event.getAppId();
         final String userId = event.getFrom().getUserId();
         // 获取该应用下唯一的一个在线会话，可以缓存在redis
-        SessionEntity activeSession = manualSessionManageService.getLastActiveSession(messageServerId, userId);
+        SessionEntity activeSession = manualSessionManageService.getLastActiveSession(appId, userId);
         if (null == activeSession) {
             // 没有会话，需要加锁创建会话
-            log.info("message handler,create new session,messageServerId:{},userId:{}", messageServerId,
+            log.info("message handler,create new session,messageServerId:{},userId:{}", appId,
                     userId);
             activeSession = robotSessionManageService.createSession(generateNewSession(event));
             // 没有创建成功会话直接返回
             if (null == activeSession) {
                 log.error("message handler return,create new session fail,messageServerId:{},userId:{}",
-                        messageServerId, userId);
+                        appId, userId);
                 return;
             }
         }
@@ -81,10 +81,10 @@ public class MessageEventHandler implements EventHandler {
         // 如果处于人工会话中则直接发给人工
         if (StrUtil.equals("manual", activeSession.getSessionType())) {
             // 人工会话处理
-            log.info("message handler,sendUserMessageToLiveCustomer,messageServerId:{},userId:{}", messageServerId,
+            log.info("message handler,sendUserMessageToLiveCustomer,messageServerId:{},userId:{}", appId,
                     userId);
-            // 发给客服
-            manualSessionManageService.processManualMessageToUserEvent(activeSession, event);
+            // 用户消息发给客服
+            manualSessionManageService.processUserMessageToAppEvent(activeSession, event);
             return;
         }
         // 否则进行转人工规则匹配，匹配到组，如果这里需要详细，也可以封装返回一个详细DTO对象

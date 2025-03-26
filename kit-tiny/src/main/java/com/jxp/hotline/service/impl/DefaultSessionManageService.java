@@ -790,7 +790,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         doAfterUserMessageToApp(session, messageKey, messageTime);
     }
 
-    public void doAfterUserMessageToApp(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+    private void doAfterUserMessageToApp(SessionEntity session, String messageKey, LocalDateTime messageTime) {
         // 根据用户的会话状态更新不同的字段
         // LastMessageId根据时间判断，可以和最后一条消息来判断
         final SessionEntityBuilder builder = SessionEntity.builder()
@@ -800,6 +800,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 .userLastMessageId(messageKey)
                 .userLastMessageTime(messageTime);
         if (StrUtil.equals("manual", session.getSessionType())) {
+            // 人工会话状态
             builder.userRequestManualNum(1);
             if (BooleanUtil.isTrue(session.getNoRequest())) {
                 builder.noRequest(false)
@@ -807,6 +808,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                         .userFistMessageTime(messageTime);
             }
         } else {
+            // 机器人会话状态
             builder.userRequestRobotNum(1);
         }
         sessionService.userUpdateSession(builder.build());
@@ -829,7 +831,25 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         if (StrUtil.isBlank(messageKey)) {
             return;
         }
-        doAfterUserMessageToApp(session, messageKey, messageTime);
+        doAfterRobotMessageToUser(session, messageKey, messageTime);
+    }
+
+    // 机器人向用户发送消息
+    private void doAfterRobotMessageToUser(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+
+    }
+
+    @Override
+    public void processRobotMessageToManualEvent(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+        if (StrUtil.isBlank(messageKey)) {
+            return;
+        }
+        doAfterRobotMessageToManual(session, messageKey, messageTime);
+    }
+
+    // 机器人向客服发送消息
+    private void doAfterRobotMessageToManual(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+
     }
 
     public void doAfterManualMessageToUser(SessionEntity session, String messageKey, LocalDateTime messageTime) {

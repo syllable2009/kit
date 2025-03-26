@@ -58,11 +58,15 @@ public interface SessionManageService {
     // 客服给用户发送，需要记录转发以后的messageKey
     void processManualMessageToUserEvent(SessionEntity session, MessageEvent event);
 
+    // 机器人向用户发送消息：安抚，提醒等
     void processRobotMessageToUserEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
 
-    // 给用户发送系统消息
+    // 机器人向客服发送消息：提醒等
+    void processRobotMessageToManualEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
+
+    // 机器人给用户发送系统消息
     String processNoticeMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
 
-    // 给用户发送卡片消息
+    // 机器人给用户发送卡片消息
     String processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId);
 }
