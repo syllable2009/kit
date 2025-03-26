@@ -1,5 +1,7 @@
 package com.jxp.hotline.service.impl;
 
+import java.util.Map;
+
 import org.springframework.stereotype.Service;
 
 import com.jxp.hotline.domain.message.SendMessageRequest;
@@ -21,5 +23,15 @@ public class MessageServiceImpl implements MessageService {
         final String messageKey = IdUtil.fastSimpleUUID();
         log.info("sendMessage exec,messageKey:{},appId:{},message:{}", messageKey, appId, JSONUtil.toJsonStr(message));
         return messageKey;
+    }
+
+    @Override
+    public String sendNoticeMessage(String templateId, Map<String, String> paramId) {
+        return null;
+    }
+
+    @Override
+    public String sendCardMessage(String templateId, Map<String, String> paramId) {
+        return null;
     }
 }

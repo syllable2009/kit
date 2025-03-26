@@ -29,6 +29,15 @@ public interface SessionManageService {
     // 处理用户发给机器人的消息，只能是机器人会话
     void processUserMessageToRobotEvent(SessionEntity session, MessageEvent event);
 
+    // 客服给用户发送消息，需要记录转发以后的messageKey
+    void processManualMessageToUserEvent(SessionEntity session, MessageEvent event);
+
+    // 机器人向用户发送消息：安抚，提醒等系统消息，只会更新endMessageKey
+    void processRobotMessageToUserEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
+
+    // 机器人向客服发送消息：提醒等系统消息，只会更新endMessageKey
+    void processRobotMessageToManualEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
+
     // 结束会话，结束原因，操作人
     void endSession(SessionEntity session);
 
@@ -54,13 +63,4 @@ public interface SessionManageService {
 
     // 消费客服上线事件，客服上线会打满直至饱和，用户的上线操作也会触发给其他在线客服分配
     void handleAssitantOnlineEvent(String assitantId);
-
-    // 客服给用户发送消息，需要记录转发以后的messageKey
-    void processManualMessageToUserEvent(SessionEntity session, MessageEvent event);
-
-    // 机器人向用户发送消息：安抚，提醒等系统消息
-    void processRobotMessageToUserEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
-
-    // 机器人向客服发送消息：提醒等系统消息
-    void processRobotMessageToManualEvent(SessionEntity session, String messageKey, LocalDateTime messageTime);
 }

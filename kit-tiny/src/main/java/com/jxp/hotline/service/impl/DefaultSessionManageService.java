@@ -580,7 +580,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         if (BooleanUtil.isFalse(groupInfo.getWorking())) {
             // 发送客服组不在工作时间留言消息
             log.info("tryDistributeManualSession return,发送客服组不在工作时间留言消息,session:{}", JSONUtil.toJsonStr(session));
-            final String messageKey = processMixcardMessageToUserEvent(session, "groupNotWorkingLeaveMessage", null);
+            final String messageKey = messageService.sendCardMessage("groupNotWorkingLeaveMessage", null);
             processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
             return;
         }
@@ -592,7 +592,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
         if (CollUtil.isEmpty(onlineAssistantList)) {
             log.info("tryDistributeManualSession return,无客服在线,发送留言消息,session:{}", JSONUtil.toJsonStr(session));
-            final String messageKey = processMixcardMessageToUserEvent(session, "noOnlineAssistantLeaveMessage", null);
+            final String messageKey = messageService.sendCardMessage("noOnlineAssistantLeaveMessage", null);
             processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
             return;
         }
@@ -604,7 +604,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
         if (StrUtil.isBlank(requestId)) {
             log.error("tryDistributeManualSession return,加锁失败,session:{}", JSONUtil.toJsonStr(session));
-            final String messageKey = processNoticeMessageToUserEvent(session, "lockFailNotice", null);
+            final String messageKey = messageService.sendNoticeMessage("lockFailNotice", null);
             processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
             return;
         }
@@ -615,7 +615,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             if (null == dbSession) {
                 // 会话恰好结束了，忽略掉，因为在会话管理算到这个会话了，会话结束的时候也要加锁
                 log.info("tryDistributeManualSession return,会话为空，数据异常,session:{}", JSONUtil.toJsonStr(session));
-                final String messageKey = processNoticeMessageToUserEvent(session, "sessionNullNotice", null);
+                final String messageKey = messageService.sendNoticeMessage("sessionNullNotice", null);
                 processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
                 return;
             }
@@ -623,7 +623,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 // 出现并发，已经是人工了
                 log.info("tryDistributeManualSession return,并发转发到人工处理,session:{}", JSONUtil.toJsonStr(dbSession));
                 // 已经转人工了，直接发送给人工
-                processManualMessageToUserEvent(dbSession, event);
+                processUserMessageToManualEvent(dbSession, event);
                 return;
             }
 
@@ -654,7 +654,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 // 排队二次确认拦截
                 if (!StrUtil.equals("userConfirm", sessionFrom) && interceptConfirmQueueSession(groupInfo, queueNum)) {
                     log.info("tryDistributeManualSession return,排队拦截处理,session:{}", JSONUtil.toJsonStr(dbSession));
-                    final String messageKey = processMixcardMessageToUserEvent(session, "queueConfirm", null);
+                    final String messageKey = messageService.sendCardMessage("queueConfirm", null);
                     processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
                     return;
                 }
@@ -879,7 +879,14 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     // 机器人向用户发送消息
     private void doAfterRobotMessageToUser(SessionEntity session, String messageKey, LocalDateTime messageTime) {
-
+        final SessionEntity build = SessionEntity.builder()
+                .sid(session.getSid())
+                .updateTime(LocalDateTime.now())
+                .sessionEndMessageId(messageKey)
+                .userLastMessageId(messageKey)
+                .userLastMessageTime(messageTime)
+                .build();
+        sessionService.userUpdateSession(build);
     }
 
     @Override
@@ -892,7 +899,14 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     // 机器人向客服发送消息
     private void doAfterRobotMessageToManual(SessionEntity session, String messageKey, LocalDateTime messageTime) {
-
+        final SessionEntity build = SessionEntity.builder()
+                .sid(session.getSid())
+                .updateTime(LocalDateTime.now())
+                .sessionEndMessageId(messageKey)
+                .userLastMessageId(messageKey)
+                .userLastMessageTime(messageTime)
+                .build();
+        sessionService.userUpdateSession(build);
     }
 
     public void doAfterManualMessageToUser(SessionEntity session, String messageKey, LocalDateTime messageTime) {
@@ -912,16 +926,5 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                     .manulFirstMessageTime(messageTime);
         }
         sessionService.manualUpdateSession(sessionBuilder.build());
-    }
-
-
-    private String processNoticeMessageToUserEvent(SessionEntity session, String templateId,
-            Map<String, String> paramId) {
-        return null;
-    }
-
-
-    private String processMixcardMessageToUserEvent(SessionEntity session, String templateId, Map<String, String> paramId) {
-        return null;
     }
 }

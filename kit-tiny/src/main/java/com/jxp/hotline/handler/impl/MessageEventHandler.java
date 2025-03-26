@@ -14,6 +14,7 @@ import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.SessionEntity;
 import com.jxp.hotline.domain.entity.SessionEntity.SessionEntityBuilder;
 import com.jxp.hotline.handler.EventHandler;
+import com.jxp.hotline.service.MessageService;
 import com.jxp.hotline.service.SessionManageService;
 import com.jxp.hotline.utils.LocalDateTimeUtil;
 
@@ -35,6 +36,8 @@ public class MessageEventHandler implements EventHandler {
     private SessionManageService manualSessionManageService;
     @Resource
     private SessionManageService robotSessionManageService;
+    @Resource
+    private MessageService messageService;
 
     @Override
     public void handle(MessageEvent event) {
@@ -116,8 +119,8 @@ public class MessageEventHandler implements EventHandler {
 
     private String sendUserChooseGroupMessage(SessionEntity session, MessageEvent event,
             List<AssistantGroupInfo> assistantGroups) {
-        // 构造参数
-        return robotSessionManageService.processMixcardMessageToUserEvent(session, "userChooseGroupMessage", null);
+        // 构造参数发送
+        return messageService.sendCardMessage("userChooseGroupMessage", null);
     }
 
     private SessionEntity generateNewSession(MessageEvent event) {
