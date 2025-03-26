@@ -35,12 +35,12 @@ public class SessionEntity {
     private String userId;
     // 租户id，用户的租户
     private String tenantId;
-    // 会话服务类型：groupTag
+    // 服务媒介类型：groupTag
     private String targetType;
-    // 会话服务id，会话服务类型groupTag，为groupId，可为空
+    // 服务媒介id，会话服务类型groupTag，为groupId，可为空
     private String targetId;
 
-    // 组id或者技能队列id
+    // 客服组id或者技能队列id
     private String groupId;
     // 客服id
     private String assitantId;

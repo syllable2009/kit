@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
-import com.google.common.collect.Lists;
 import com.jxp.hotline.annotation.EventType;
 import com.jxp.hotline.config.SpringUtils;
 import com.jxp.hotline.domain.dto.CustomerGroupDTO;
@@ -16,6 +15,7 @@ import com.jxp.hotline.domain.entity.SessionEntity.SessionEntityBuilder;
 import com.jxp.hotline.handler.EventHandler;
 import com.jxp.hotline.service.MessageService;
 import com.jxp.hotline.service.SessionManageService;
+import com.jxp.hotline.service.SessionService;
 import com.jxp.hotline.utils.LocalDateTimeUtil;
 
 import cn.hutool.core.collection.CollUtil;
@@ -38,6 +38,8 @@ public class MessageEventHandler implements EventHandler {
     private SessionManageService robotSessionManageService;
     @Resource
     private MessageService messageService;
+    @Resource
+    private SessionService sessionService;
 
     @Override
     public void handle(MessageEvent event) {
@@ -67,7 +69,7 @@ public class MessageEventHandler implements EventHandler {
         final String appId = event.getAppId();
         final String userId = event.getFrom().getUserId();
         // 获取该应用下唯一的一个在线会话，可以缓存在redis
-        SessionEntity activeSession = manualSessionManageService.getLastActiveSession(appId, userId);
+        SessionEntity activeSession = sessionService.getActiveSessionByUserId(appId, userId);
         if (null == activeSession) {
             // 没有会话，需要加锁创建会话
             log.info("message handler,create new session,appId:{},userId:{}", appId,
@@ -97,13 +99,14 @@ public class MessageEventHandler implements EventHandler {
             robotSessionManageService.processUserMessageToRobotEvent(activeSession, event);
         } else if (1 == customerGroupDTOS.size()) {
             final CustomerGroupDTO customerGroupDTO = customerGroupDTOS.get(0);
+            // 获取组的配置
             AssistantGroupInfo assistantGroupInfo = null;
             // 尝试开始分配客服转人工
             robotSessionManageService.tryDistributeManualSession(activeSession, assistantGroupInfo, "userToManual", event);
         } else {
-            final List<AssistantGroupInfo> assistantGroups = Lists.newArrayList();
+            // 发送卡片展示的组名称可以是自定义的，选中单个组才会实时查询组的服务状态信息等
             // 发送选择技能队列卡片，此时还是机器人会话，选择卡片以后调用distributeManualSession方法
-            final String messageKey = sendUserChooseGroupMessage(activeSession, event, assistantGroups);
+            final String messageKey = sendUserChooseGroupMessage(activeSession, event, customerGroupDTOS);
             if (StrUtil.isBlank(messageKey)) {
                 log.error("message handler,sendUserChooseGroupMessage error");
                 return;
@@ -118,7 +121,7 @@ public class MessageEventHandler implements EventHandler {
     }
 
     private String sendUserChooseGroupMessage(SessionEntity session, MessageEvent event,
-            List<AssistantGroupInfo> assistantGroups) {
+            List<CustomerGroupDTO> assistantGroups) {
         // 构造参数发送
         return messageService.sendCardMessage("userChooseGroupMessage", null);
     }

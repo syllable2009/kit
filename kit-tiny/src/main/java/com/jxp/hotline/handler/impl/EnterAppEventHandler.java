@@ -13,6 +13,7 @@ import com.jxp.hotline.domain.entity.SessionEntity;
 import com.jxp.hotline.handler.EventHandler;
 import com.jxp.hotline.service.MessageService;
 import com.jxp.hotline.service.SessionManageService;
+import com.jxp.hotline.service.SessionService;
 import com.jxp.hotline.utils.JedisCommands;
 import com.jxp.hotline.utils.JedisUtils;
 
@@ -36,6 +37,8 @@ public class EnterAppEventHandler implements EventHandler {
     private SessionManageService robotSessionManageService;
     @Resource
     private MessageService messageService;
+    @Resource
+    private SessionService sessionService;
 
     @Override
     public void handle(MessageEvent event) {
@@ -50,7 +53,7 @@ public class EnterAppEventHandler implements EventHandler {
             return;
         }
         // 有会话不发
-        final SessionEntity activeSession = robotSessionManageService.getLastActiveSession(appId, userId);
+        final SessionEntity activeSession = sessionService.getActiveSessionByUserId(appId, userId);
         if (null != activeSession) {
             return;
         }

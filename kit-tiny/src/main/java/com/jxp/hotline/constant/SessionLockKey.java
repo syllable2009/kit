@@ -22,7 +22,7 @@ public class SessionLockKey {
 
     // 客服全局会话总数，assitantId
     public static String AssitantGlobelSessionNum = "hotline:globel:session:num:{}";
-    // 客服但有用会话数，groupId：assitantId
+    // 客服单应用会话数，appId：assitantId
     public static String AssitantAppSessionNum = "hotline:app:session:num:{}:{}";
     // 应用号转人工规则缓存
     public static String appTransferRule = "hotline:app:transfer:rule:{}";

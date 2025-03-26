@@ -10,6 +10,7 @@ import com.jxp.hotline.domain.entity.SessionEntity;
 import com.jxp.hotline.domain.entity.SessionEntity.SessionEntityBuilder;
 import com.jxp.hotline.handler.EventHandler;
 import com.jxp.hotline.service.SessionManageService;
+import com.jxp.hotline.service.SessionService;
 import com.jxp.hotline.utils.LocalDateTimeUtil;
 
 import cn.hutool.core.util.IdUtil;
@@ -27,13 +28,15 @@ public class GroupTagEventHandler implements EventHandler {
 
     @Resource
     private SessionManageService manualSessionManageService;
+    @Resource
+    private SessionService sessionService;
 
     @Override
     public void handle(MessageEvent event) {
         log.info("groupTag handler,event:{}", JSONUtil.toJsonStr(event));
         final String appId = event.getAppId();
         final String userId = event.getFrom().getUserId();
-        SessionEntity activeSession = manualSessionManageService.getGroupActiveSession(appId, event.getSessionId());
+        SessionEntity activeSession = sessionService.getActiveSessionByGroupId(appId, event.getSessionId());
         // 此处可以设置客服创建会话
         if (null == activeSession) {
             // 没有会话，需要加锁创建会话

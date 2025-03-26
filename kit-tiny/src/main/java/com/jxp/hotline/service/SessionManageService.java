@@ -19,10 +19,6 @@ public interface SessionManageService {
 
     List<CustomerGroupDTO> matchLiveGroup(MessageEvent event);
 
-    SessionEntity getLastActiveSession(String appId, String userId);
-
-    SessionEntity getGroupActiveSession(String appId, String groupId);
-
     SessionEntity createSession(SessionEntity session);
 
     // 处理用户发给人工客服的消息，只能是人工会话
@@ -43,8 +39,8 @@ public interface SessionManageService {
     // 结束会话，结束原因，操作人
     void endSession(SessionEntity session);
 
-    // 强制转接会话人
-    Boolean forwardManualSession(SessionEntity session, String assistantId);
+    // 处理强制转接客服操作，可以突破转接客服上线
+    void handleForwardSessionEvent(String sessionId, String assitantId);
 
     // 尝试处理分配客服的场景，可能分配不到，如果分配到了，创建会话失败时，需要给客服补偿单应用会话数和会话总数
     void tryDistributeManualSession(SessionEntity session, AssistantGroupInfo groupInfo,
@@ -59,9 +55,6 @@ public interface SessionManageService {
 
     // 处理会话结束事件
     void handleManualSessionEndEvent(SessionEntity dbSession);
-
-    // 处理强制转接客服操作，可以突破转接客服上线
-    void handleForwardSessionEvent(String sessionId, String assitantId);
 
     // 消费客服上线事件，客服上线会打满直至饱和，用户的上线操作也会触发给其他在线客服分配
     void handleAssitantOnlineEvent(String assitantId);

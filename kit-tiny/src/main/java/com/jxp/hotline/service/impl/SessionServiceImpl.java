@@ -43,6 +43,21 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public Boolean createSession(SessionEntity sessionEntity) {
+        if (null == sessionEntity.getNoReply()) {
+            sessionEntity.setNoReply(true);
+        }
+        if (null == sessionEntity.getNoRequest()) {
+            sessionEntity.setNoRequest(true);
+        }
+        if (null == sessionEntity.getUserRequestRobotNum()) {
+            sessionEntity.setUserRequestRobotNum(0);
+        }
+        if (null == sessionEntity.getUserRequestManualNum()) {
+            sessionEntity.setUserRequestManualNum(0);
+        }
+        if (null == sessionEntity.getManulReplyNum()) {
+            sessionEntity.setManulReplyNum(0);
+        }
         return null;
     }
 
