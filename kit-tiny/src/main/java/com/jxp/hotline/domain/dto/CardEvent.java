@@ -13,23 +13,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class MessageEvent {
+public class CardEvent {
 
     private String uuid;
-    private String token;
-    private Long timestamp;
-    // 应用号id
+    private long timestamp;
     private String appId;
-    // info事件类型：message action recall reaction
     private String eventType;
+    private CardInfo info;
 
     // 原始事件的会话类型，p2p单聊 group普通群聊 groupTag客服群聊
     private String sessionType;
     // group groupTag时的id
     private String sessionId;
-
-    private MessageInfo info;
-
 
     // 原始事件的操作者
     private EventUser from;

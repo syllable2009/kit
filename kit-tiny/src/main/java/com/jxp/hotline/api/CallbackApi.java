@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jxp.hotline.domain.dto.CardEvent;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.handler.EventHandler;
 
@@ -31,8 +32,8 @@ public class CallbackApi {
     private Map<String, EventHandler> eventHandlerMap;
 
     @PostMapping("/message")
-    public ResponseEntity<Boolean> kimMessageCallback(@RequestBody MessageEvent event) {
-        log.info("kimMessageCallback,event:{}", JSONUtil.toJsonStr(event));
+    public ResponseEntity<Boolean> messageCallback(@RequestBody MessageEvent event) {
+        log.info("messageCallback,event:{}", JSONUtil.toJsonStr(event));
         // 消息去重
         // 落库如果有必要，顺序入队列：削峰
         // 模拟消费
@@ -49,5 +50,14 @@ public class CallbackApi {
             return;
         }
         eventHandler.handle(event);
+    }
+
+    @PostMapping("/card")
+    public ResponseEntity<Boolean> cardCallback(@RequestBody CardEvent event) {
+        log.info("cardCallback,event:{}", JSONUtil.toJsonStr(event));
+        // 消息去重
+        // 落库如果有必要，顺序入队列：削峰
+        // 模拟消费
+        return ResponseEntity.ok(true);
     }
 }
