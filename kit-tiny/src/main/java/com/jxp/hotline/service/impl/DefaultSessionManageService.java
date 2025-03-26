@@ -26,8 +26,8 @@ import com.jxp.hotline.domain.entity.SessionEntity.SessionEntityBuilder;
 import com.jxp.hotline.service.MessageService;
 import com.jxp.hotline.service.SessionManageService;
 import com.jxp.hotline.service.SessionService;
-import com.jxp.hotline.utils.JedisUtils;
 import com.jxp.hotline.utils.JedisCommands;
+import com.jxp.hotline.utils.JedisUtils;
 import com.jxp.hotline.utils.LocalDateTimeUtil;
 
 import cn.hutool.core.collection.CollUtil;
@@ -47,6 +47,10 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     @Resource
     private MessageService messageService;
+    @Resource
+    private SessionService sessionService;
+    @Autowired(required = false)
+    private JedisCommands jedisCommands;
 
     @Override
     public List<CustomerGroupDTO> matchLiveGroup(MessageEvent event) {
@@ -140,11 +144,6 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         }
     }
 
-    @Resource
-    private SessionService sessionService;
-    @Autowired(required = false)
-    private JedisCommands jedisCommands;
-
     @Override
     public SessionEntity createSession(SessionEntity session) {
         final SessionEntity newSession = createSessionLock(session);
@@ -176,7 +175,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
         final String requestId = JedisUtils.tryLock(jedisCommands, lockKey);
         if (StrUtil.isBlank(requestId)) {
-            log.error("createSessionLock return,lock fail,event:{}", JSONUtil.toJsonStr(session));
+            log.error("createSessionLock return,lock fail,session:{}", JSONUtil.toJsonStr(session));
             return null;
         }
         try {
@@ -191,7 +190,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 return null;
             }
         } catch (Exception e) {
-            log.error("createNewSession lock exception, session:{},", JSONUtil.toJsonStr(session), e);
+            log.error("createSessionLock exception, session:{},", JSONUtil.toJsonStr(session), e);
             return null;
         } finally {
             JedisUtils.releaseLockSafe(jedisCommands, lockKey, requestId);
@@ -201,22 +200,68 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     @Override
     public void endSession(SessionEntity session) {
-        sessionService.endSession(session);
-        // 结束掉会话
-        doAfterSessionEnd(session);
+        final String appId = session.getAppId();
+        // 客服发给app还是用户发给app
+        final String userId = session.getUserId();
+        // 加锁：需要和升级会话加锁的key一致
+        final String lockKey = SessionLockKey.format(SessionLockKey.sessionLockKey, appId, userId);
+
+        final String requestId = JedisUtils.tryLock(jedisCommands, lockKey);
+        if (StrUtil.isBlank(requestId)) {
+            log.error("endSession return,lock fail,session:{}", JSONUtil.toJsonStr(session));
+            return;
+        }
+        SessionEntity dbSession = null;
+        try {
+            // 加锁再去查一遍db，防止并发
+            dbSession = sessionService.getSessionBySid(session.getSid());
+            if (StrUtil.equals("end", dbSession.getSessionState())
+                    || !StrUtil.equals(session.getSessionType(), dbSession.getSessionType())) {
+                return;
+            }
+            final LocalDateTime now = LocalDateTimeUtil.now();
+            dbSession.setUpdateTime(now);
+            dbSession.setSessionEndTime(now);
+            dbSession.setSessionState("end");
+            // 加锁结束会话
+            final Boolean ret = sessionService.endSession(dbSession);
+            if (BooleanUtil.isFalse(ret)) {
+                log.error("endSession return,result false,session:{}", JSONUtil.toJsonStr(session));
+                return;
+            }
+        } catch (Exception e) {
+            log.error("endSession exception, session:{},", JSONUtil.toJsonStr(session), e);
+            return;
+        } finally {
+            JedisUtils.releaseLockSafe(jedisCommands, lockKey, requestId);
+        }
+        if (StrUtil.equals("muanualChat", session.getSessionType())) {
+            // 结束人工该聊天
+            doAfterManualSessionEnd(dbSession);
+        } else if (StrUtil.equals("queue", session.getSessionType())) {
+            doAfterQueueSessionEnd(dbSession);
+        } else if (StrUtil.equals("botChat", session.getSessionType())) {
+            doAfterEndRobotSession(dbSession);
+        } else {
+            return;
+        }
     }
 
     // session结束后预留的扩展接口
-    private void doAfterSessionEnd(SessionEntity session) {
+    private void doAfterManualSessionEnd(SessionEntity session) {
         // 同步给三方
         synToAdmin();
         // 清掉缓存
-        if (StrUtil.equals("manual", session.getSessionType())) {
-            // 结束人工会话，自动分配
-            handleManualSessionEndEvent(session);
-        } else {
-            // 结束机器人会话
-        }
+    }
+
+    private void doAfterQueueSessionEnd(SessionEntity session) {
+        // 同步给三方
+        synToAdmin();
+        // 清掉缓存
+    }
+
+    private void doAfterEndRobotSession(SessionEntity session) {
+        synToAdmin();
     }
 
     private Boolean forwardManualSession(SessionEntity session, String assistantId) {

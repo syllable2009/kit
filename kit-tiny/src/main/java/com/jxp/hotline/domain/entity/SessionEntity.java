@@ -27,9 +27,9 @@ public class SessionEntity {
     private String appId;
     // bot manual
     private String sessionType;
-    // -1=机器人聊天botChat，queue=排队 muanualChat=人工接入 end=结束
+    // -1=机器人聊天botChat，queue=排队 muanualChat=人工聊天 end=结束
     private String sessionState;
-    // 如果结束，表示结束原因
+    // 如果结束，表示结束原因，客服关闭 manualClose, 2:用户关闭userClose, 3:用户超时 userTimeout, 4:客服超时 manualTimeout
     private String cause;
     // 用户id
     private String userId;

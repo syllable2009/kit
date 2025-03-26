@@ -17,8 +17,10 @@ import com.jxp.hotline.domain.entity.SessionEntity;
 
 public interface SessionManageService {
 
+    // 匹配转人工规则的客服组
     List<CustomerGroupDTO> matchLiveGroup(MessageEvent event);
 
+    // 加锁创建会话
     SessionEntity createSession(SessionEntity session);
 
     // 处理用户发给人工客服的消息，只能是人工会话
