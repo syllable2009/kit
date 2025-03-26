@@ -9,7 +9,7 @@ import lombok.Data;
  * @author jiaxiaopeng
  * Created on 2025-03-20 17:06
  */
-public interface KsRedisCommands<K, V> {
+public interface JedisCommands<K, V> {
 
     Long del(K... var1);
 

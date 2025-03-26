@@ -21,7 +21,15 @@ import lombok.extern.slf4j.Slf4j;
 public class SessionServiceImpl implements SessionService {
 
     @Override
-    public SessionEntity getActiveSession(String messageServerId, String userId) {
+    public SessionEntity getActiveSessionByUserId(String appId, String userId) {
+//        lambdaQuery()
+//                .last(" limit 1")
+//                .one();
+        return null;
+    }
+
+    @Override
+    public SessionEntity getActiveSessionByGroupId(String appId, String groupId) {
 //        lambdaQuery()
 //                .last(" limit 1")
 //                .one();

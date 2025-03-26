@@ -2,7 +2,7 @@ package com.jxp.hotline.utils;
 
 import java.util.UUID;
 
-import com.jxp.hotline.utils.KsRedisCommands.SetArgs;
+import com.jxp.hotline.utils.JedisCommands.SetArgs;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ public class JedisUtils {
 
 
     // 加锁，时间单位为秒
-    public static String tryLock(KsRedisCommands<String, String> ksRedisCommands,
+    public static String tryLock(JedisCommands<String, String> jedisCommands,
             String lockKey, long waitTime, long expireTime) {
         String requestId = UUID.randomUUID().toString();
         long currentTime = System.currentTimeMillis();
@@ -29,7 +29,7 @@ public class JedisUtils {
             final SetArgs setArgs = new SetArgs();
             setArgs.setNx(true);
             setArgs.setEx(expireTime);
-            final String result = ksRedisCommands.set(lockKey, requestId,
+            final String result = jedisCommands.set(lockKey, requestId,
                     setArgs);
             if ("OK".equals(result)) {
                 return requestId;
@@ -43,7 +43,7 @@ public class JedisUtils {
         setArgs.setNx(true);
         setArgs.setEx(expireTime);
         while (currentTime < endTime) {
-            final String result = ksRedisCommands.set(lockKey, requestId,
+            final String result = jedisCommands.set(lockKey, requestId,
                     setArgs);
             if ("OK".equals(result)) {
                 return requestId;
@@ -59,52 +59,60 @@ public class JedisUtils {
         return null;
     }
 
-    public static String tryLock(KsRedisCommands<String, String> ksRedisCommands, String lockKey) {
-        return tryLock(ksRedisCommands, lockKey, DEFAULT_ACQUIRE_TIMEOUT, DEFAULT_LOCK_EXPIRE);
+    public static String tryLock(JedisCommands<String, String> jedisCommands, String lockKey) {
+        return tryLock(jedisCommands, lockKey, DEFAULT_ACQUIRE_TIMEOUT, DEFAULT_LOCK_EXPIRE);
     }
 
     // 存在并发问题，删除和获取不是原子操作
-    public static void releaseLock(KsRedisCommands<String, String> ksRedisCommands, String lockKey,
+    public static void releaseLock(JedisCommands<String, String> jedisCommands, String lockKey,
             String requestId) {
         if (StrUtil.isBlank(requestId)) {
             return;
         }
-        String value = ksRedisCommands.get(lockKey);
+        String value = jedisCommands.get(lockKey);
         if (StrUtil.isBlank(value)) {
             return;
         }
         if (requestId.equals(value)) {
-            ksRedisCommands.del(lockKey);
+            jedisCommands.del(lockKey);
         }
     }
 
-    public static void releaseLockSafe(KsRedisCommands<String, String> ksRedisCommands, String lockKey,
+    public static void releaseLockSafe(JedisCommands<String, String> jedisCommands, String lockKey,
             String requestId) {
         if (StrUtil.isBlank(requestId)) {
             return;
         }
         String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', "
                 + "KEYS[1]) == 1 and true or false else return false end";
-//        ksRedisCommands.eval(script, ScriptOutputType.BOOLEAN, new String[]{lockKey},
+//        jedisCommands.eval(script, ScriptOutputType.BOOLEAN, new String[]{lockKey},
 //                requestId);
     }
 
-    public static Integer incr(KsRedisCommands<String, String> ksRedisCommands, String key) {
+    public static Integer incr(JedisCommands<String, String> jedisCommands, String key) {
         // 原子性加一，如果该键不存在，Redis 会将其初始化为 0，然后执行增加操作，所以结果为 1
-        return ksRedisCommands.incr(key).intValue();
+        return jedisCommands.incr(key).intValue();
     }
 
-    public static Integer decr(KsRedisCommands<String, String> ksRedisCommands, String key) {
+    public static Integer decr(JedisCommands<String, String> jedisCommands, String key) {
         // 原子性减一，如果key 不存在，那么key 的值会先被初始化为0 ，然后再执行DECR 操作
-        return ksRedisCommands.decr(key).intValue();
+        return jedisCommands.decr(key).intValue();
     }
 
-    public static Integer getInt(KsRedisCommands<String, String> ksRedisCommands, String key) {
+    public static Integer getInt(JedisCommands<String, String> jedisCommands, String key) {
         // 原子性减一，如果key 不存在，那么key 的值会先被初始化为0 ，然后再执行DECR 操作
-        final String num = ksRedisCommands.get(key);
+        final String num = jedisCommands.get(key);
         if (StrUtil.isBlank(num)) {
             return 0;
         }
         return Integer.parseInt(num);
+    }
+
+    public static String get(JedisCommands<String, String> jedisCommands, String key) {
+        return jedisCommands.get(key);
+    }
+
+    public static String setex(JedisCommands<String, String> jedisCommands, String key, long expire, String value) {
+        return jedisCommands.setex(key, expire, value);
     }
 }

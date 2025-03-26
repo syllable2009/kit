@@ -27,7 +27,7 @@ import com.jxp.hotline.service.MessageService;
 import com.jxp.hotline.service.SessionManageService;
 import com.jxp.hotline.service.SessionService;
 import com.jxp.hotline.utils.JedisUtils;
-import com.jxp.hotline.utils.KsRedisCommands;
+import com.jxp.hotline.utils.JedisCommands;
 import com.jxp.hotline.utils.LocalDateTimeUtil;
 
 import cn.hutool.core.collection.CollUtil;
@@ -142,11 +142,16 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     @Resource
     private SessionService sessionService;
     @Autowired(required = false)
-    private KsRedisCommands ksRedisCommands;
+    private JedisCommands jedisCommands;
 
     @Override
     public SessionEntity getLastActiveSession(String appId, String userId) {
-        return sessionService.getActiveSession(appId, userId);
+        return sessionService.getActiveSessionByUserId(appId, userId);
+    }
+
+    @Override
+    public SessionEntity getGroupActiveSession(String appId, String groupId) {
+        return sessionService.getActiveSessionByGroupId(appId, groupId);
     }
 
     @Override
@@ -178,7 +183,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final String lockKey = SessionLockKey.format(SessionLockKey.sessionLockKey, appId
                 , userId);
 
-        final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
+        final String requestId = JedisUtils.tryLock(jedisCommands, lockKey);
         if (StrUtil.isBlank(requestId)) {
             log.error("createSessionLock return,lock fail,event:{}", JSONUtil.toJsonStr(session));
             return null;
@@ -198,7 +203,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             log.error("createNewSession lock exception, session:{},", JSONUtil.toJsonStr(session), e);
             return null;
         } finally {
-            JedisUtils.releaseLockSafe(ksRedisCommands, lockKey, requestId);
+            JedisUtils.releaseLockSafe(jedisCommands, lockKey, requestId);
         }
         return session;
     }
@@ -271,7 +276,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
         // 组的排队数校验
         final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
-        final Integer groupQueueNum = JedisUtils.getInt(ksRedisCommands, groupQueueNumKey);
+        final Integer groupQueueNum = JedisUtils.getInt(jedisCommands, groupQueueNumKey);
         if (groupQueueNum < 1) {
             log.info("doGroupDistributeAssistant return, queue num is 0,appId:{},groupId:{}", appId, groupId);
             return generateFailDistributeAssitant("groupQueueNull");
@@ -356,10 +361,10 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     private boolean hasReachedGlobalMax(String assistantId, Integer maxNum) {
         // 给组加锁了，这里就不给人加锁了，利用incr和decr的原子性操作2次
         final String key = SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assistantId);
-        final int globelNum = JedisUtils.incr(ksRedisCommands, key).intValue();
+        final int globelNum = JedisUtils.incr(jedisCommands, key).intValue();
         if (globelNum > maxNum) {
             // 补偿回来
-            JedisUtils.decr(ksRedisCommands, key);
+            JedisUtils.decr(jedisCommands, key);
             return true;
         }
         return false;
@@ -367,7 +372,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     private boolean hasReachedAppMax(String groupId, String assistantId, Integer maxNum) {
         final String key = SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, groupId, assistantId);
-        final int globelNum = JedisUtils.incr(ksRedisCommands, key).intValue();
+        final int globelNum = JedisUtils.incr(jedisCommands, key).intValue();
         if (globelNum > maxNum) {
             // 双补偿
             decrSessionNum(groupId, assistantId);
@@ -377,15 +382,15 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     private void incrSessionNum(String groupId, String assitantId) {
-        JedisUtils.incr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assitantId));
-        JedisUtils.incr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, groupId,
+        JedisUtils.incr(jedisCommands, SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assitantId));
+        JedisUtils.incr(jedisCommands, SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, groupId,
                 assitantId));
     }
 
     // 其他地方不补偿，除非创建会话db失败
     private void decrSessionNum(String groupId, String assitantId) {
-        JedisUtils.decr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assitantId));
-        JedisUtils.decr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, groupId,
+        JedisUtils.decr(jedisCommands, SessionLockKey.format(SessionLockKey.AssitantGlobelSessionNum, assitantId));
+        JedisUtils.decr(jedisCommands, SessionLockKey.format(SessionLockKey.AssitantAppSessionNum, groupId,
                 assitantId));
     }
 
@@ -433,10 +438,10 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             return false;
         }
         // 排队数+1
-        final Integer incr = JedisUtils.incr(ksRedisCommands, SessionLockKey.format(SessionLockKey.AppGroupQueueNum, dbSession.getAppId(),
+        final Integer incr = JedisUtils.incr(jedisCommands, SessionLockKey.format(SessionLockKey.AppGroupQueueNum, dbSession.getAppId(),
                 groupInfo.getGroupId()));
         // 添加到排队列表中
-        ksRedisCommands.lpush(SessionLockKey.format(SessionLockKey.AppGroupQueueList, dbSession.getAppId()
+        jedisCommands.lpush(SessionLockKey.format(SessionLockKey.AppGroupQueueList, dbSession.getAppId()
                 , groupInfo.getGroupId()), entity.getSid());
 
         doAfterUpgradeQueueSession(dbSession, groupInfo, queueNum);
@@ -516,7 +521,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         // 组维度的加锁，尝试自动分配
         final String lockKey = SessionLockKey.format(SessionLockKey.sessionGroupLockKey, appId
                 , groupId);
-        final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
+        final String requestId = JedisUtils.tryLock(jedisCommands, lockKey);
         if (StrUtil.isBlank(requestId)) {
             log.error("doGroupDistributeAssistant lock fail, appId:{},groupId:{}", appId, groupId);
             return generateFailDistributeAssitant("groupLockFail");
@@ -528,10 +533,10 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             final String popKey = SessionLockKey.format(SessionLockKey.AppGroupQueueList, appId
                     , groupId);
             final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
-            final Object lindex = ksRedisCommands.lindex(popKey, 0);
+            final Object lindex = jedisCommands.lindex(popKey, 0);
             if (null == lindex) {
                 // 清空排队key和统计数，加锁实现
-                ksRedisCommands.del(popKey, groupQueueNumKey);
+                jedisCommands.del(popKey, groupQueueNumKey);
                 log.info("doGroupDistributeAssistant return, queue is empty,appId:{},groupId:{}", appId, groupId);
                 return generateFailDistributeAssitant("groupQueueEmpty");
             }
@@ -552,9 +557,9 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             distribute = distributeAssistant(groupInfo, assistantList, session);
             if (BooleanUtil.isTrue(distribute.getDistributeResult())) {
                 // 移除队列
-                ksRedisCommands.lpop(popKey);
+                jedisCommands.lpop(popKey);
                 // 排队数原子性减一
-                ksRedisCommands.decr(groupQueueNumKey);
+                jedisCommands.decr(groupQueueNumKey);
             }
         } catch (Exception e) {
             log.error("doGroupDistributeAssistant lock exception, appId:{},groupId:{},", appId, groupId, e);
@@ -563,7 +568,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                     .failReason(e.getMessage())
                     .build();
         } finally {
-            JedisUtils.releaseLockSafe(ksRedisCommands, lockKey, requestId);
+            JedisUtils.releaseLockSafe(jedisCommands, lockKey, requestId);
         }
         if (null == distribute) {
             distribute = DistributeAssitant.builder()
@@ -601,7 +606,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         // 如果没有排队，判断是否需要加入到排队中，不排队直接分配客服，分配不到进入排队
         final String lockKey = SessionLockKey.format(SessionLockKey.sessionGroupLockKey, session.getAppId()
                 , groupInfo.getGroupId());
-        final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
+        final String requestId = JedisUtils.tryLock(jedisCommands, lockKey);
         if (StrUtil.isBlank(requestId)) {
             log.error("tryDistributeManualSession return,加锁失败,session:{}", JSONUtil.toJsonStr(session));
             final String messageKey = messageService.sendNoticeMessage("lockFailNotice", null);
@@ -630,7 +635,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             // 设置会话升级的来源
             dbSession.setSessionFrom(sessionFrom);
 
-            final Integer queueNum = JedisUtils.getInt(ksRedisCommands, SessionLockKey.format(SessionLockKey.AppGroupQueueNum, dbSession.getAppId(),
+            final Integer queueNum = JedisUtils.getInt(jedisCommands, SessionLockKey.format(SessionLockKey.AppGroupQueueNum, dbSession.getAppId(),
                     groupInfo.getGroupId()));
 
             // 如果有排队先进排队，因为分配客服是一个比较重的操作
@@ -676,7 +681,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             // 控制incr操作后不能补偿的问题
             log.error("tryDistributeManualSession lock exception, session:{},", JSONUtil.toJsonStr(dbSession), e);
         } finally {
-            JedisUtils.releaseLockSafe(ksRedisCommands, lockKey, requestId);
+            JedisUtils.releaseLockSafe(jedisCommands, lockKey, requestId);
         }
     }
 
@@ -688,10 +693,10 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             final String appId = session.getAppId();
             final String groupId = session.getTargetId();
             final String groupQueueNumKey = SessionLockKey.format(SessionLockKey.AppGroupQueueNum, appId, groupId);
-            ksRedisCommands.incr(groupQueueNumKey);
+            jedisCommands.incr(groupQueueNumKey);
             final String popKey = SessionLockKey.format(SessionLockKey.AppGroupQueueList, appId
                     , groupId);
-            ksRedisCommands.rpush(popKey, session.getSid());
+            jedisCommands.rpush(popKey, session.getSid());
             // 排队的数据回滚
             incrSessionNum(groupId, session.getAssitantId());
         } else {
@@ -859,6 +864,9 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     @Override
     public void processManualMessageToUserEvent(SessionEntity session, MessageEvent event) {
+        if (StrUtil.equals("manual", session.getSessionType())) {
+            return;
+        }
         // 客服的消息发给用户
         final LocalDateTime now = LocalDateTimeUtil.now();
         String messageKey = messageService.sendMessage(session.getAppId(), null);

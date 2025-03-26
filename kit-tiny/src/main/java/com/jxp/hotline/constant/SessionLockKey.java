@@ -11,7 +11,8 @@ public class SessionLockKey {
 
     // 会话创建或者升级使用的key appId:userId
     public static String sessionLockKey = "hotline:session:{}:{}";
-
+    // app打招呼缓存key appId：userId
+    public static String welcomeSendKey = "hotline:welcome:{}:{}";
     // 组操作的加锁key appId：groupId
     public static String sessionGroupLockKey = "hotline:session:group:{}:{}";
     // 会话排队数量，appId：groupId

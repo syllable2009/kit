@@ -70,12 +70,12 @@ public class MessageEventHandler implements EventHandler {
         SessionEntity activeSession = manualSessionManageService.getLastActiveSession(appId, userId);
         if (null == activeSession) {
             // 没有会话，需要加锁创建会话
-            log.info("message handler,create new session,messageServerId:{},userId:{}", appId,
+            log.info("message handler,create new session,appId:{},userId:{}", appId,
                     userId);
             activeSession = robotSessionManageService.createSession(generateNewSession(event));
             // 没有创建成功会话直接返回
             if (null == activeSession) {
-                log.error("message handler return,create new session fail,messageServerId:{},userId:{}",
+                log.error("message handler return,create new session fail,appId:{},userId:{}",
                         appId, userId);
                 return;
             }
@@ -84,7 +84,7 @@ public class MessageEventHandler implements EventHandler {
         // 如果处于人工会话中则直接发给人工
         if (StrUtil.equals("manual", activeSession.getSessionType())) {
             // 人工会话处理
-            log.info("message handler,sendUserMessageToLiveCustomer,messageServerId:{},userId:{}", appId,
+            log.info("message handler,sendUserMessageToLiveCustomer,appId:{},userId:{}", appId,
                     userId);
             // 用户消息发给客服
             manualSessionManageService.processUserMessageToManualEvent(activeSession, event);
@@ -130,6 +130,7 @@ public class MessageEventHandler implements EventHandler {
                 .appId(event.getAppId())
                 .userId(event.getFrom().getUserId())
                 .sid(IdUtil.fastSimpleUUID())
+                .sessionFirstMessageId(event.getInfo().getMessageKey())
                 .createTime(now)
                 .updateTime(now)
                 .noRequest(true)

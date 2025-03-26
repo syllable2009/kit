@@ -8,7 +8,10 @@ import com.jxp.hotline.domain.entity.SessionEntity;
  * Created on 2025-03-20 11:33
  */
 public interface SessionService {
-    SessionEntity getActiveSession(String messageServerId, String userId);
+
+    SessionEntity getActiveSessionByUserId(String appId, String userId);
+
+    SessionEntity getActiveSessionByGroupId(String appId, String groupId);
 
     SessionEntity getSessionBySid(String sessionId);
 

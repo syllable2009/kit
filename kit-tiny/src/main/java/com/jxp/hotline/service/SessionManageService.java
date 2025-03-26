@@ -21,6 +21,8 @@ public interface SessionManageService {
 
     SessionEntity getLastActiveSession(String appId, String userId);
 
+    SessionEntity getGroupActiveSession(String appId, String groupId);
+
     SessionEntity createSession(SessionEntity session);
 
     // 处理用户发给人工客服的消息，只能是人工会话
