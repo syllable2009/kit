@@ -15,12 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ManualSessionManageService extends DefaultSessionManageService {
 
-    @Override
+
     public void doAfterSessionCreate(SessionEntity session) {
-        super.doAfterSessionCreate(session);
     }
 
-    @Override
+
     public void doAfterSessionEnd(SessionEntity session) {
     }
 }

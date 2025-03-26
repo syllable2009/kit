@@ -15,11 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RobotSessionManageService extends DefaultSessionManageService {
 
-    @Override
     public void doAfterSessionCreate(SessionEntity session) {
     }
 
-    @Override
     public void doAfterSessionEnd(SessionEntity session) {
     }
 }

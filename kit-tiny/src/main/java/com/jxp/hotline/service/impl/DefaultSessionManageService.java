@@ -1,6 +1,5 @@
 package com.jxp.hotline.service.impl;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -122,6 +121,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 return false;
             }
         }
+        return true;
     }
 
     private boolean matchKeyWord(TransferRuleItemDTO ruleItem, String inputText) {
