@@ -51,17 +51,23 @@ public class SessionEntity {
     // 转接会话才有的
     private String beforeSessionId;
 
-    // 人工会话才有，表示自动分配 autoDistribute，客服领取 manualClaim
-    private String sessionReceiveType;
-
     // 会话的创建时间，用户可以发起，客服也可以发起会话
     private LocalDateTime createTime;
+
+    // 会话最后一个有效时间
+    private LocalDateTime sessionLastTime;
 
     // 会话的结束时间
     private LocalDateTime sessionEndTime;
 
-    // 客服认领时间
+    // 会话开始排队时间
+    private LocalDateTime sessionQueueTime;
+
+    // 客服认领时间，分配到客服时间
     private LocalDateTime takeOverTime;
+
+    // 人工会话才有，表示自动分配 autoDistribute，客服领取 manualClaim
+    private String sessionReceiveType;
 
     // 最后一次修改时间
     private LocalDateTime updateTime;

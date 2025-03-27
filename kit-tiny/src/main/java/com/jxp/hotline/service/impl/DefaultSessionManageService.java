@@ -828,7 +828,9 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final SessionEntity newSession = forwardManualSession(session, assitantId);
         if (null != newSession) {
             doAfterSessionForward(session, newSession);
+            return true;
         }
+        return false;
     }
 
     @Override
@@ -1032,5 +1034,10 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                     .manulFirstMessageTime(messageTime);
         }
         sessionService.manualUpdateSession(sessionBuilder.build());
+    }
+
+    @Override
+    public Boolean claimQueueSession(String sessionId) {
+        return null;
     }
 }
