@@ -20,7 +20,8 @@ public class PulsarConsumer {
     //    @PulsarListener(
 //            topics = "persistent://public/default/my-topic",
 //            subscriptionName = "my-subscription",
-//            subscriptionType = SubscriptionType.Shared
+//            subscriptionType = SubscriptionType.Shared，
+//            schemaType = SchemaType.JSON
 //    )
     public void consumerSessionTimeoutMessage(String message) {
         // 处理消息逻辑

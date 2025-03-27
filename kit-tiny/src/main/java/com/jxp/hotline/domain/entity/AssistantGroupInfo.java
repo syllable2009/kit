@@ -30,7 +30,7 @@ public class AssistantGroupInfo {
     private Boolean ifDistributeRecently;
 
     // 是否开启排队过多不接单，超过queueNum留言
-    private Boolean ifRejectManyQueue;
+    private Boolean ifRejectQueue;
     // 如果开启多少个不接单20
     private Integer rejectQueueNum;
 
@@ -39,8 +39,8 @@ public class AssistantGroupInfo {
     // 是否进行转人工确认操作的排队数10
     private Integer confirmNum;
 
-    // 超过5个人提示耐心等待
-    private Boolean ifNoticeManyQueue;
-    private Integer noticeNum;
-
+    // 是否开启排队提醒
+    private Boolean ifNoticeQueue;
+    private Integer noticeManyNum;
+    private Integer noticeMoreNum;
 }

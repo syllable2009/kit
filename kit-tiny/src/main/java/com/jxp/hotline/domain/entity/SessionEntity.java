@@ -29,7 +29,8 @@ public class SessionEntity {
     private String sessionType;
     // -1=机器人聊天botChat，queue=排队 muanualChat=人工聊天 end=结束
     private String sessionState;
-    // 如果结束，表示结束原因，客服关闭 manualClose, 2:用户关闭userClose, 3:用户超时 userTimeout, 4:客服超时 manualTimeout 转接transfer
+    // 如果结束，表示结束原因，客服关闭 1manualClose, 2:用户关闭userClose, 3:用户超时 userTimeout, 4:客服超时 manualTimeout 5转接关闭transfer
+    // 6排队超时queueTimeout
     private String cause;
     // 用户id
     private String userId;

@@ -158,9 +158,18 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     // session创建后预留的扩展接口
     private void doAfterSessionCreate(SessionEntity session) {
         // 同步会话，发事件来做
+        // 人工会话需要发送欢迎语
+        final String sessionType = session.getSessionType();
+        // 创建的会话只能是机器人会话和人工会话
+        if (StrUtil.equals("muanualChat", sessionType)) {
+            // 给用户发送排队事件
+            final String messageKey = messageService.sendNoticeMessage("manualStartService", null);
+            processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
+        }
+        // 缓存会话信息
 //        cacheSession();
 //        synToAdmin();
-        // 缓存会话信息
+
     }
 
     // 加锁创建session底层服务
@@ -212,11 +221,12 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             return false;
         }
         SessionEntity dbSession = null;
+        final String sessionType = session.getSessionType();
         try {
             // 加锁再去查一遍db，防止并发
             dbSession = sessionService.getSessionBySid(session.getSid());
             if (StrUtil.equals("end", dbSession.getSessionState())
-                    || !StrUtil.equals(session.getSessionType(), dbSession.getSessionType())) {
+                    || !StrUtil.equals(sessionType, dbSession.getSessionType())) {
                 return false;
             }
             final LocalDateTime now = LocalDateTimeUtil.now();
@@ -235,12 +245,12 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         } finally {
             JedisUtils.releaseLockSafe(jedisCommands, lockKey, requestId);
         }
-        if (StrUtil.equals("muanualChat", session.getSessionType())) {
+        if (StrUtil.equals("muanualChat", sessionType)) {
             // 结束人工该聊天
             doAfterManualSessionEnd(dbSession);
-        } else if (StrUtil.equals("queue", session.getSessionType())) {
+        } else if (StrUtil.equals("queue", sessionType)) {
             doAfterQueueSessionEnd(dbSession);
-        } else if (StrUtil.equals("botChat", session.getSessionType())) {
+        } else if (StrUtil.equals("botChat", sessionType)) {
             doAfterEndRobotSession(dbSession);
         } else {
             log.info("endSession return,unkown sesstionType,session:{}", JSONUtil.toJsonStr(dbSession));
@@ -285,6 +295,14 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     private void doAfterQueueSessionEnd(SessionEntity session) {
+        // 客服结束，用户结束
+        if (StrUtil.equals("queueTimeout", session.getCause())) {
+            // 排队超时需要发送留言
+        } else if (StrUtil.equals("userClose", session.getCause())) {
+            // 用户取消
+        } else if (StrUtil.equals("userClose", session.getCause())) {
+            // 客服关闭
+        }
         // 同步给三方
         synToAdmin();
         // 清掉缓存
@@ -301,6 +319,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         }
         String oldAssitant = session.getAssitantId();
 
+        // 校验新的客服信息assistantId
         AssistantInfo assistantInfo = null;
         if (null == assistantInfo) {
             log.info("doAppointDistributeAssistant return, assistantInfo is null");
@@ -330,6 +349,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             if (BooleanUtil.isFalse(ifEndOldSession)) {
                 return null;
             }
+            decrSessionNum(session.getAppId(), assistantInfo.getAssistantId());
             // 调整服务媒介
             String targetType = "groupTag";
             String targetId = "groupId";
@@ -340,18 +360,18 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                     .targetType(targetType)
                     .targetId(targetId)
                     .assitantId(assistantId)
+                    .groupId(session.getGroupId())
                     .sessionFrom("forward")
-                    .appId(session.getAppId())
+                    .sessionType("manual")
+                    .sessionState("muanualChat")
                     .build();
-
-            newSession = createSessionLock(newSession);
+            newSession = createSession(newSession);
             if (null == newSession) {
                 log.error("createSession return,create fail,session:{}", JSONUtil.toJsonStr(session));
                 return null;
             }
             // 给指定人分配会话，指定人减，可以突破上限
             incrSessionNum(newSession.getAppId(), newSession.getAssitantId());
-            decrSessionNum(session.getAppId(), assistantInfo.getAssistantId());
             return newSession;
         }
     }
@@ -505,7 +525,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     private boolean validQueueLimit(AssistantGroupInfo groupInfo, Integer queueNum) {
         // 判断排队多少人，有没有设置排队过多不接单
-        if (BooleanUtil.isTrue(groupInfo.getIfRejectManyQueue())) {
+        if (BooleanUtil.isTrue(groupInfo.getIfRejectQueue())) {
             if (queueNum >= groupInfo.getRejectQueueNum()) {
                 // 发送超过排队上限留言消息，此时还是机器人
                 log.info("distributeManualSession return,发送超过排队上限留言消息,queueNum:{}", queueNum);
@@ -544,15 +564,14 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final Boolean ret = sessionService.upgradeQueueSession(entity);
         if (BooleanUtil.isFalse(ret)) {
             log.info("handleCreateQueueSession return,create session fail,session:{}", JSONUtil.toJsonStr(entity));
+            // 排队数+1
+            final Integer incr = JedisUtils.incr(jedisCommands, SessionLockKey.format(SessionLockKey.AppGroupQueueNum, dbSession.getAppId(),
+                    groupInfo.getGroupId()));
+            // 添加到排队列表中
+            jedisCommands.lpush(SessionLockKey.format(SessionLockKey.AppGroupQueueList, dbSession.getAppId()
+                    , groupInfo.getGroupId()), entity.getSid());
             return false;
         }
-        // 排队数+1
-        final Integer incr = JedisUtils.incr(jedisCommands, SessionLockKey.format(SessionLockKey.AppGroupQueueNum, dbSession.getAppId(),
-                groupInfo.getGroupId()));
-        // 添加到排队列表中
-        jedisCommands.lpush(SessionLockKey.format(SessionLockKey.AppGroupQueueList, dbSession.getAppId()
-                , groupInfo.getGroupId()), entity.getSid());
-
         doAfterUpgradeQueueSession(dbSession, groupInfo, queueNum);
         return true;
     }
@@ -560,10 +579,17 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     public void doAfterUpgradeQueueSession(SessionEntity session, AssistantGroupInfo groupInfo, Integer queueNum) {
         // 发送MQ事件或者异步同步数据
         // 排队通知消息
-        if (BooleanUtil.isTrue(groupInfo.getIfNoticeManyQueue())) {
-            if (queueNum > groupInfo.getNoticeNum()) {
+        String templateId = "fewQueueNotice";
+        if (BooleanUtil.isTrue(groupInfo.getIfNoticeQueue())) {
+            if (queueNum >= groupInfo.getNoticeManyNum()) {
                 // 可以排队，发送排队安抚消息，排在第n位，请耐心等待
+                templateId = "manyQueueNotice";
+            } else if (queueNum >= groupInfo.getNoticeMoreNum()) {
+                templateId = "moreQueueNotice";
             }
+            // 发送排队的位置 fewQueueNotice moreQueueNotice manyQueueNotice
+            final String messageKey = messageService.sendNoticeMessage(templateId, null);
+            processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
         }
         synToAdmin();
     }
@@ -991,8 +1017,6 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 .sid(session.getSid())
                 .updateTime(LocalDateTime.now())
                 .sessionEndMessageId(messageKey)
-                .userLastMessageId(messageKey)
-                .userLastMessageTime(messageTime)
                 .build();
         sessionService.userUpdateSession(build);
     }

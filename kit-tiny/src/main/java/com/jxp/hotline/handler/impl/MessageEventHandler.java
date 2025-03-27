@@ -135,12 +135,7 @@ public class MessageEventHandler implements EventHandler {
                 .sid(IdUtil.fastSimpleUUID())
                 .sessionFirstMessageId(event.getInfo().getMessageKey())
                 .createTime(now)
-                .updateTime(now)
-                .noRequest(true)
-                .noReply(true)
-                .userRequestRobotNum(0)
-                .userRequestManualNum(0)
-                .manulReplyNum(0);
+                .updateTime(now);
         final String sessionType = event.getSessionType();
         boolean ifUserSend = StrUtil.equals("p2p", sessionType);
         if (ifUserSend) {

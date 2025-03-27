@@ -57,6 +57,6 @@ public interface SessionManageService {
     // 事件：消费客服上线事件，客服上线会打满直至饱和，用户的上线操作也会触发给其他在线客服分配
     void handleAssitantOnlineEvent(String assitantId);
 
-    // 操作：领取排队会话
+    // 操作：领取排队会话，可以突破转接客服上线
     Boolean claimQueueSession(String sessionId);
 }
