@@ -1,6 +1,8 @@
 package com.jxp.hotline.utils;
 
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import com.jxp.hotline.utils.JedisCommands.SetArgs;
 
@@ -114,5 +116,30 @@ public class JedisUtils {
 
     public static String setex(JedisCommands<String, String> jedisCommands, String key, long expire, String value) {
         return jedisCommands.setex(key, expire, value);
+    }
+
+    public static <T> T lockExec(JedisCommands<String, String> ksRedisCommands, String lockKey, Callable<T> method,
+            Consumer<T> onSuccess,
+            Consumer<Exception> onException) {
+        final String requestId = JedisUtils.tryLock(ksRedisCommands, lockKey);
+        if (StrUtil.isBlank(requestId)) {
+            log.error("lockExec return,lock fail,lockKey:{}, method:{}", lockKey, method.getClass());
+            return null;
+        }
+        try {
+            final T ret = method.call();
+            if (onSuccess != null) {
+                onSuccess.accept(ret);
+            }
+            return ret;
+        } catch (Exception e) {
+            log.error("lockExec error,lockKey:{}, method:{}, e", lockKey, method.getClass(), e);
+            if (onException != null) {
+                onException.accept(e);
+            }
+        } finally {
+            JedisUtils.releaseLockSafe(ksRedisCommands, lockKey, requestId);
+        }
+        return null;
     }
 }

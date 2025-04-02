@@ -16,6 +16,7 @@ import com.jxp.hotline.constant.SessionLockKey;
 import com.jxp.hotline.domain.dto.BotConfig;
 import com.jxp.hotline.domain.dto.CustomerGroupDTO;
 import com.jxp.hotline.domain.dto.DistributeAssitant;
+import com.jxp.hotline.domain.dto.ForwardSessionDTO;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.dto.TransferRuleDTO;
 import com.jxp.hotline.domain.dto.TransferRuleItemDTO;
@@ -198,6 +199,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 log.error("createSessionLock return,createSession fail,session:{}", JSONUtil.toJsonStr(session));
                 return null;
             }
+            // 还要创建sessionService.save(session);此时还没有startSeqId
         } catch (Exception e) {
             log.error("createSessionLock exception, session:{},", JSONUtil.toJsonStr(session), e);
             return null;
@@ -313,25 +315,46 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     // 转接其实就是调用结束会话和创建会话，单考虑到通知消息和会话数限制，这里调用原子操作再重新集成一遍
-    private SessionEntity forwardManualSession(SessionEntity session, String assistantId) {
+    private SessionEntity forwardManualSession(ForwardSessionDTO forward) {
+
+        // 查询原始会话
+        final SessionEntity session = sessionService.getSessionBySid(forward.getSessionId());
         if (!StrUtil.equals("manual", session.getSessionType())) {
+            // 会话状态校验
+            log.info("forwardManualSession return, not manual session,forward:{}", JSONUtil.toJsonStr(forward));
             return null;
         }
         String oldAssitant = session.getAssitantId();
-
-        // 校验新的客服信息assistantId
-        AssistantInfo assistantInfo = null;
-        if (null == assistantInfo) {
-            log.info("doAppointDistributeAssistant return, assistantInfo is null");
+        if (StrUtil.equals(oldAssitant, forward.getOperator())) {
+            // 权限校验
+            log.info("forwardManualSession return, no auth,forward:{}", JSONUtil.toJsonStr(forward));
             return null;
         }
+        if (StrUtil.isNotBlank(forward.getAssitantId())) {
+            // 转接给人，校验新的客服信息assistantId
+            AssistantInfo assistantInfo = null;
+            if (null == assistantInfo) {
+                log.info("forwardManualSession return, assistantInfo is null,forward:{}", JSONUtil.toJsonStr(forward));
+                return null;
+            }
+        } else if (StrUtil.isNotBlank(forward.getGroupId())) {
+            // 转接给组，校验转接的组的信息
+            AssistantGroupInfo groupInfo = null;
+            if (null == groupInfo) {
+                log.info("forwardManualSession return, groupInfo is null,forward:{}", JSONUtil.toJsonStr(forward));
+                return null;
+            }
+        } else {
+            return null;
+        }
+
 
         // 转接直接调整人还是先结束老会话，创建一个新的会话，这里直接调整
         if (true) {
             // 直接调整，此时回复数继承，会话不发送历史
-            final SessionEntity forward = SessionEntity.builder()
+            final SessionEntity sessionEntity = SessionEntity.builder()
                     .sid(session.getSid())
-                    .assitantId(assistantId)
+                    .assitantId(session.getAssitantId())
                     .sessionFrom("forward")
                     .build();
             boolean ret = false;
@@ -339,9 +362,9 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 return null;
             }
             // 给指定人分配会话
-            incrSessionNum(session.getAppId(), assistantInfo.getAssistantId());
+            incrSessionNum(session.getAppId(), session.getAssitantId());
             decrSessionNum(session.getAppId(), oldAssitant);
-            return forward;
+            return sessionEntity;
         } else {
             // 结束老会话
             session.setCause("transfer");
@@ -349,7 +372,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             if (BooleanUtil.isFalse(ifEndOldSession)) {
                 return null;
             }
-            decrSessionNum(session.getAppId(), assistantInfo.getAssistantId());
+            decrSessionNum(session.getAppId(), session.getAssitantId());
             // 调整服务媒介
             String targetType = "groupTag";
             String targetId = "groupId";
@@ -359,7 +382,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                     .appId(session.getAppId())
                     .targetType(targetType)
                     .targetId(targetId)
-                    .assitantId(assistantId)
+                    .assitantId(session.getAssitantId())
                     .groupId(session.getGroupId())
                     .sessionFrom("forward")
                     .sessionType("manual")
@@ -377,16 +400,9 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     // 会话转接后预留的扩展接口
-    private void doAfterSessionForward(SessionEntity oldSession, SessionEntity newSession) {
+    private void doAfterSessionForward(SessionEntity session, ForwardSessionDTO forward) {
         // 给客服发送新客服接入的提示，而不发送会话结束
         // 新会话发送历史记录
-        synToAdmin();
-    }
-
-    // 会话转接后预留的扩展接口
-    private void doAfterSessionForward(SessionEntity session) {
-        // 新会话发送历史记录
-        synToAdmin();
     }
 
     // 分配会话，包装分配的结果和分配的详细信息
@@ -398,7 +414,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
         // 组不开启自动分配
         if (BooleanUtil.isFalse(groupInfo.getAutoDistribute())) {
-            log.info("doGroupDistributeAssistant return, assistantGroupInfo is not autoDistribute,appId:{},groupId:{}"
+            log.info("doGroupDistributeAssistant return, assistantGroupInfo is not autoDistribute"
                     , appId, groupId);
             return generateFailDistributeAssitant("groupCloseAutoDistribute");
         }
@@ -549,7 +565,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         return false;
     }
 
-    // 升级操作了，理论上已经算是人工了
+    // 升级操作了，必须要在加锁中执行
     private Boolean handleUpgradeQueueSession(AssistantGroupInfo groupInfo, Integer queueNum, SessionEntity dbSession) {
 
         // 本次要操作的对象，不要修改参数对象
@@ -594,6 +610,7 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         synToAdmin();
     }
 
+    // 升级操作，必须要在加锁中执行
     private Boolean handleUpgradeManualSession(AssistantGroupInfo groupInfo, AssistantInfo assistantInfo,
             SessionEntity session) {
 
@@ -849,11 +866,10 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     }
 
     @Override
-    public Boolean handleForwardSessionEvent(String sessionId, String assitantId) {
-        final SessionEntity session = sessionService.getSessionBySid(sessionId);
-        final SessionEntity newSession = forwardManualSession(session, assitantId);
+    public Boolean handleForwardSessionEvent(ForwardSessionDTO forward) {
+        final SessionEntity newSession = forwardManualSession(forward);
         if (null != newSession) {
-            doAfterSessionForward(session, newSession);
+            doAfterSessionForward(newSession, forward);
             return true;
         }
         return false;

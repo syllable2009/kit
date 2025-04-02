@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.jxp.hotline.domain.dto.CustomerGroupDTO;
 import com.jxp.hotline.domain.dto.DistributeAssitant;
+import com.jxp.hotline.domain.dto.ForwardSessionDTO;
 import com.jxp.hotline.domain.dto.MessageEvent;
 import com.jxp.hotline.domain.entity.AssistantGroupInfo;
 import com.jxp.hotline.domain.entity.AssistantInfo;
@@ -42,7 +43,7 @@ public interface SessionManageService {
     Boolean endSession(SessionEntity session);
 
     // 操作：处理强制转接客服操作，可以突破转接客服上线
-    Boolean handleForwardSessionEvent(String sessionId, String assitantId);
+    Boolean handleForwardSessionEvent(ForwardSessionDTO forward);
 
     // 尝试处理分配客服的场景，可能分配不到，如果分配到了，创建会话失败时，需要给客服补偿单应用会话数和会话总数
     void tryDistributeManualSession(SessionEntity session, AssistantGroupInfo groupInfo,
