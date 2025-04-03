@@ -30,10 +30,10 @@ public class AppRun {
             if (BooleanUtil.isTrue(matchCustomRuleResult)) {
                 return;
             } else {
-                log.info("messageServerId={},userId={} not match custom rule");
+                log.info("appId={},userId={} not match custom rule");
             }
         } else {
-            log.info("messageServerId={},userId={} not enable manual service");
+            log.info("appId={},userId={} not enable manual service");
             // 机器人
         }
     }

@@ -208,3 +208,30 @@ docker run -d --name gopeed --restart always -p 6600:9999 -v /Users/jiaxiaopeng/
 # Pingora正式开源：超强的Nginx替代品，每秒可处理4000万请求
 https://github.com/cloudflare/pingora
 
+
+# Apache Pulsar  下一代消息队列
+docker pull apachepulsar/pulsar:3.3.5
+
+
+docker run -d \
+--name pulsar \
+-p 6650:6650 \    # Broker 通信端口
+-p 8650:8080 \    # Admin 控制台端口
+--mount source=pulsardata,target=/Users/jiaxiaopeng/docker/pulsar/data \  # 数据持久化‌:ml-citation{ref="1,6" data="citationList"}
+--mount source=pulsarconf,target=/Users/jiaxiaopeng/docker/pulsar/conf \  # 配置持久化‌:ml-citation{ref="1,6" data="citationList"}
+apachepulsar/pulsar \
+bin/pulsar standalone  # 启动单机模式‌:ml-citation{ref="1,8" data="citationList"}
+
+docker ps -a | grep pulsar  # 检查容器运行状态‌:ml-citation{ref="1,8" data="citationList"}
+
+
+docker run -d \
+--name pulsar \
+-p 6650:6650 \
+-p 8080:8080 \
+-v /Users/jiaxiaopeng/docker/pulsar/data:/pulsar/data \
+-v /Users/jiaxiaopeng/docker/pulsar/conf:/pulsar/conf \
+apachepulsar/pulsar:3.3.5 \
+bin/pulsar standalone
+
+docker cp pulsar:/pulsar/conf /Users/jiaxiaopeng/docker/pulsar/conf

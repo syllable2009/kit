@@ -22,9 +22,9 @@ public class MainTest {
 
     public static void main(String[] args) {
 //        generateSalt();
-        String operator = "jiaxiaopeng";
+        String operator = "wb_zhangminghui";
         final String md5Sign = getMd5Sign(operator, ADMIN_SALT, DateUtil.format(new DateTime(), "yyyy-MM"));
-        log.info("sign:{}");
+        log.info("sign:{}", md5Sign);
     }
 
 

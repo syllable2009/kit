@@ -46,3 +46,6 @@ https://github.com/HandBrake/HandBrake
 
 # PortableApps
 PortableApps.com Platform™ 是一款功能齐全的便携式软件系统，它将您所有的便携式应用程序整合在一起，让您可以构建自己的自定义便携式应用程序套件，以便在同步的云文件夹、本地 PC 或便携式 USB 驱动器上使用。并且它与您的本地应用程序分开保存。也可在 macOS 上使用。
+
+# rime开源输入法
+https://rime.im/code/
