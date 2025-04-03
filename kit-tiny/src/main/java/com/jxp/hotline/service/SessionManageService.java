@@ -60,4 +60,6 @@ public interface SessionManageService {
 
     // 操作：领取排队会话，可以突破转接客服上线
     Boolean claimQueueSession(String sessionId);
+
+    void userUpdateSession(SessionEntity session, MessageEvent event);
 }

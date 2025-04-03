@@ -163,12 +163,16 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final String sessionType = session.getSessionType();
         // 创建的会话只能是机器人会话和人工会话
         if (StrUtil.equals("muanualChat", sessionType)) {
-            // 给用户发送排队事件
+            // 给用户发送通知
             final String messageKey = messageService.sendNoticeMessage("manualStartService", null);
             processRobotMessageToUserEvent(session, messageKey, LocalDateTimeUtil.now());
+            // 给客服发送历史记录
+            processRobotMessageToManualEvent(session, messageKey, LocalDateTimeUtil.now());
         }
+
         // 缓存会话信息
 //        cacheSession();
+//        启动会话延迟消息
 //        synToAdmin();
 
     }
@@ -935,12 +939,11 @@ public abstract class DefaultSessionManageService implements SessionManageServic
             log.error("processUserMessageToAppEvent fail,messageKey is blank,session:{},messageKey:{}",
                     JSONUtil.toJsonStr(session), messageKey);
         }
-        doAfterUserMessageToManual(session, messageKey, messageTime);
 
     }
 
     // 用户给客服发消息
-    private void doAfterUserMessageToManual(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+    private void manageSessionUserMessageToManual(SessionEntity session, String messageKey, LocalDateTime messageTime) {
         // LastMessageId根据时间判断，可以和最后一条消息来判断
         final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
@@ -992,11 +995,11 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         // 调用机器人不断获取结果并不断刷新，直到结束
 
         if (StrUtil.isNotBlank(endMessageKey)) {
-            doAfterUserMessageToRobot(session, endMessageKey, LocalDateTimeUtil.now());
+            processRobotMessageToUserEvent(session, endMessageKey, LocalDateTimeUtil.now());
         }
     }
 
-    private void doAfterUserMessageToRobot(SessionEntity session, String messageKey, LocalDateTime messageTime) {
+    private void manageSessionUserMessageToRobot(SessionEntity session, String messageKey, LocalDateTime messageTime) {
         // LastMessageId根据时间判断，可以和最后一条消息来判断
         final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
@@ -1034,16 +1037,11 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         if (StrUtil.isBlank(messageKey)) {
             return;
         }
-        doAfterRobotMessageToUser(session, messageKey, messageTime);
-    }
-
-    // 机器人向用户发送消息
-    private void doAfterRobotMessageToUser(SessionEntity session, String messageKey, LocalDateTime messageTime) {
         // LastMessageId根据时间判断，可以和最后一条消息来判断
         final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
                 .updateTime(messageTime)
-                .sessionLastTime(messageTime)
+//                .sessionLastTime(messageTime) 系统消息不修改会话活跃时间
                 .sessionEndMessageId(messageKey)
                 .userLastMessageId(messageKey)
                 .userLastMessageTime(messageTime);
@@ -1059,6 +1057,8 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         if (StrUtil.isBlank(messageKey)) {
             return;
         }
+        // 转发人工消息
+        // 如果客服和用户中间转发分开，则下列代码不要执行，整体算一个会话的话才执行
         final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
                 .updateTime(messageTime)
@@ -1096,5 +1096,18 @@ public abstract class DefaultSessionManageService implements SessionManageServic
     @Override
     public Boolean claimQueueSession(String sessionId) {
         return null;
+    }
+
+    @Override
+    public void userUpdateSession(SessionEntity session, MessageEvent event) {
+        LocalDateTime messageTime = LocalDateTimeUtil.timestampToLocalDateTime(event.getTimestamp());
+        String messageKey = event.getInfo().getMessageKey();
+        // 会话管理，这里分开是考虑到机器人和人工可分开2张表
+        if (StrUtil.equals("manual", session.getSessionType())) {
+            manageSessionUserMessageToManual(session, messageKey, messageTime);
+        } else {
+            // 排队算机器人
+            manageSessionUserMessageToRobot(session, messageKey, messageTime);
+        }
     }
 }
