@@ -65,7 +65,7 @@ public class GroupTagEventHandler implements EventHandler {
                 .appId(event.getAppId())
                 .userId("") // 客服建立和谁聊天
                 .sid(IdUtil.fastSimpleUUID())
-                .sessionFirstMessageId(event.getInfo().getMessageKey())
+                .sessionStartMessageId(event.getInfo().getMessageKey())
                 .createTime(now)
                 .updateTime(now);
         final String sessionType = event.getSessionType();

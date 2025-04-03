@@ -26,6 +26,11 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    public String frowardMessage(String appId, String targetId, String messageKey) {
+        return null;
+    }
+
+    @Override
     public String sendNoticeMessage(String templateId, Map<String, String> paramId) {
         return null;
     }

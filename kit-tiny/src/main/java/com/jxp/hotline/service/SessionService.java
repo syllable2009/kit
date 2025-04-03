@@ -34,9 +34,9 @@ public interface SessionService {
 
     Boolean endSession(SessionEntity session);
 
-    // 客服发送消息后更新会话信息
+    // 人工会话中更新消息
     Boolean manualUpdateSession(SessionEntity session);
 
-    // 用户发送消息后更新会话信息
-    Boolean userUpdateSession(SessionEntity session);
+    // 机器人会话中更新消息
+    Boolean robotUpdateSession(SessionEntity session);
 }

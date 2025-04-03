@@ -133,7 +133,7 @@ public class MessageEventHandler implements EventHandler {
                 .appId(event.getAppId())
                 .userId(event.getFrom().getUserId())
                 .sid(IdUtil.fastSimpleUUID())
-                .sessionFirstMessageId(event.getInfo().getMessageKey())
+                .sessionStartMessageId(event.getInfo().getMessageKey())
                 .createTime(now)
                 .updateTime(now);
         final String sessionType = event.getSessionType();

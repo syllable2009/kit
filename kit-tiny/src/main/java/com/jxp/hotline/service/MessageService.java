@@ -13,6 +13,8 @@ public interface MessageService {
 
     String sendMessage(String appId, SendMessageRequest message);
 
+    String frowardMessage(String appId, String targetId, String messageKey);
+
     // 给用户发送notice
     String sendNoticeMessage(String templateId,
             Map<String, String> paramId);

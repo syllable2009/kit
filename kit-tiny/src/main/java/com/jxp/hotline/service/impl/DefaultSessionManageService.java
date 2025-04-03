@@ -928,34 +928,40 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         final String messageKey = event.getInfo().getMessageKey();
         final LocalDateTime messageTime = LocalDateTimeUtil.timestampToLocalDateTime(event.getTimestamp());
 
-        // 用户发给客服的消息
-        final String assitantId = session.getAssitantId();
-        String forwardMessageKey = messageService.sendMessage(event.getAppId(), null);
+        // 转发用户的消息
+        String forwardMessageKey = messageService.frowardMessage(event.getAppId(), session.getAssitantId(), messageKey);
         // 消息转发
         if (StrUtil.isBlank(forwardMessageKey)) {
-            log.info("processUserMessageToAppEvent return,messageKey is blank,session:{}", JSONUtil.toJsonStr(session));
-            return;
+            log.error("processUserMessageToAppEvent fail,messageKey is blank,session:{},messageKey:{}",
+                    JSONUtil.toJsonStr(session), messageKey);
         }
         doAfterUserMessageToManual(session, messageKey, messageTime);
 
     }
 
+    // 用户给客服发消息
     private void doAfterUserMessageToManual(SessionEntity session, String messageKey, LocalDateTime messageTime) {
         // LastMessageId根据时间判断，可以和最后一条消息来判断
         final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
-                .updateTime(LocalDateTime.now())
+                .updateTime(messageTime)
+                .sessionLastTime(messageTime)
                 .sessionEndMessageId(messageKey)
                 .userLastMessageId(messageKey)
                 .userLastMessageTime(messageTime)
-                .userRequestManualNum(1);
+                .userRequestManualNum(1); // 1表示在数据库执行时加一
 
-        if (BooleanUtil.isTrue(session.getNoRequest())) {
-            builder.noRequest(false)
+        if (BooleanUtil.isFalse(session.getUserRequest())) {
+            builder.userRequest(true)
                     .userFistMessageId(messageKey)
                     .userFistMessageTime(messageTime);
         }
-        sessionService.userUpdateSession(builder.build());
+
+        if (StrUtil.isBlank(session.getSessionStartMessageId())) {
+            builder.sessionStartMessageId(messageKey);
+        }
+
+        sessionService.manualUpdateSession(builder.build());
     }
 
     private BotConfig getBotConfig(String appId) {
@@ -992,16 +998,20 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     private void doAfterUserMessageToRobot(SessionEntity session, String messageKey, LocalDateTime messageTime) {
         // LastMessageId根据时间判断，可以和最后一条消息来判断
-        final SessionEntity build = SessionEntity.builder()
+        final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
-                .updateTime(LocalDateTime.now())
+                .updateTime(messageTime)
+                .sessionLastTime(messageTime)
                 .sessionEndMessageId(messageKey)
                 .userLastMessageId(messageKey)
                 .userLastMessageTime(messageTime)
-                .userRequestRobotNum(1)
-                .build();
+                .userRequestRobotNum(1); // 1表示在数据库执行时加一
 
-        sessionService.userUpdateSession(build);
+        if (StrUtil.isBlank(session.getSessionStartMessageId())) {
+            builder.sessionStartMessageId(messageKey);
+        }
+
+        sessionService.robotUpdateSession(builder.build());
     }
 
     @Override
@@ -1029,12 +1039,19 @@ public abstract class DefaultSessionManageService implements SessionManageServic
 
     // 机器人向用户发送消息
     private void doAfterRobotMessageToUser(SessionEntity session, String messageKey, LocalDateTime messageTime) {
-        final SessionEntity build = SessionEntity.builder()
+        // LastMessageId根据时间判断，可以和最后一条消息来判断
+        final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
-                .updateTime(LocalDateTime.now())
+                .updateTime(messageTime)
+                .sessionLastTime(messageTime)
                 .sessionEndMessageId(messageKey)
-                .build();
-        sessionService.userUpdateSession(build);
+                .userLastMessageId(messageKey)
+                .userLastMessageTime(messageTime);
+
+        if (StrUtil.isBlank(session.getSessionStartMessageId())) {
+            builder.sessionStartMessageId(messageKey);
+        }
+        sessionService.robotUpdateSession(builder.build());
     }
 
     @Override
@@ -1042,36 +1059,36 @@ public abstract class DefaultSessionManageService implements SessionManageServic
         if (StrUtil.isBlank(messageKey)) {
             return;
         }
-        doAfterRobotMessageToManual(session, messageKey, messageTime);
-    }
-
-    // 机器人向客服发送消息
-    private void doAfterRobotMessageToManual(SessionEntity session, String messageKey, LocalDateTime messageTime) {
-        final SessionEntity build = SessionEntity.builder()
+        final SessionEntityBuilder builder = SessionEntity.builder()
                 .sid(session.getSid())
-                .updateTime(LocalDateTime.now())
+                .updateTime(messageTime)
+//                .sessionLastTime(messageTime) 系统消息不更新会话的活跃时间
                 .sessionEndMessageId(messageKey)
                 .userLastMessageId(messageKey)
-                .userLastMessageTime(messageTime)
-                .build();
-        sessionService.userUpdateSession(build);
+                .userLastMessageTime(messageTime);
+        sessionService.manualUpdateSession(builder.build());
     }
+
 
     public void doAfterManualMessageToUser(SessionEntity session, String messageKey, LocalDateTime messageTime) {
         // 记录人工的最后一条消息
-        final Boolean noReply = session.getNoReply();
         final SessionEntityBuilder sessionBuilder = SessionEntity.builder()
                 .sid(session.getSid())
-                .manulLastMessageId(messageKey)
-                .manulLastMessageTime(messageTime)
                 .updateTime(messageTime)
+                .sessionLastTime(messageTime)
                 .sessionEndMessageId(messageKey)
-                .manulReplyNum(1);
-        if (BooleanUtil.isTrue(noReply)) {
+                .manualLastMessageId(messageKey)
+                .manualLastMessageTime(messageTime)
+                .manualReplyNum(1);
+        if (BooleanUtil.isFalse(session.getManualReply())) {
             // 第一次回复
-            sessionBuilder.noReply(false)
-                    .manulFirstMessageId(messageKey)
-                    .manulFirstMessageTime(messageTime);
+            sessionBuilder.manualReply(true)
+                    .manualFirstMessageId(messageKey)
+                    .manualFirstMessageTime(messageTime);
+        }
+        // 人工触发第一条记录
+        if (StrUtil.isBlank(session.getSessionStartMessageId())) {
+            sessionBuilder.sessionStartMessageId(messageKey);
         }
         sessionService.manualUpdateSession(sessionBuilder.build());
     }

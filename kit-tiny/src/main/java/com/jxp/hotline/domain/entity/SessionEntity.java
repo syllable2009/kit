@@ -55,7 +55,7 @@ public class SessionEntity {
     // 会话的创建时间，用户可以发起，客服也可以发起会话
     private LocalDateTime createTime;
 
-    // 会话最后一个有效时间
+    // 会话最后一个活跃时间
     private LocalDateTime sessionLastTime;
 
     // 会话的结束时间
@@ -63,6 +63,9 @@ public class SessionEntity {
 
     // 会话开始排队时间
     private LocalDateTime sessionQueueTime;
+
+    // 会话转人工时间
+    private LocalDateTime sessionManualTime;
 
     // 客服认领时间，分配到客服时间
     private LocalDateTime takeOverTime;
@@ -74,7 +77,7 @@ public class SessionEntity {
     private LocalDateTime updateTime;
 
     // 会话开始消息id
-    private String sessionFirstMessageId;
+    private String sessionStartMessageId;
 
     // 结束消息id
     private String sessionEndMessageId;
@@ -102,27 +105,27 @@ public class SessionEntity {
     private Integer userRequestManualNum;
 
     // 用户未提问人工，针对转人工之后
-    private Boolean noRequest;
+    private Boolean userRequest;
 
     /**
      * 客服的统计信息
      */
 
     // 客服第一条消息id，排队，客服欢迎的系统提示不算
-    private String manulFirstMessageId;
+    private String manualFirstMessageId;
 
     // 客服第一条回复时间
-    private LocalDateTime manulFirstMessageTime;
+    private LocalDateTime manualFirstMessageTime;
 
     // 客服最后一条消息id
-    private String manulLastMessageId;
+    private String manualLastMessageId;
 
     // 客服第一条回复时间
-    private LocalDateTime manulLastMessageTime;
+    private LocalDateTime manualLastMessageTime;
 
     // 转人工后客服的回复量
-    private Integer manulReplyNum;
+    private Integer manualReplyNum;
 
     // 客服未回复，0回复，针对人工会话
-    private Boolean noReply;
+    private Boolean manualReply;
 }

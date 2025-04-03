@@ -21,6 +21,7 @@ import com.jxp.tinystruct.domain.Command;
 import com.jxp.tinystruct.domain.CommandParam;
 import com.jxp.tinystruct.service.Configuration;
 import com.jxp.tinystruct.service.Settings;
+import com.jxp.web.Context;
 
 import lombok.extern.slf4j.Slf4j;
 

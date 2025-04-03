@@ -9,6 +9,7 @@ import com.jxp.hotline.service.SessionService;
 
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -43,11 +44,11 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public Boolean createSession(SessionEntity sessionEntity) {
-        if (null == sessionEntity.getNoReply()) {
-            sessionEntity.setNoReply(true);
+        if (null == sessionEntity.getUserRequest()) {
+            sessionEntity.setUserRequest(false);
         }
-        if (null == sessionEntity.getNoRequest()) {
-            sessionEntity.setNoRequest(true);
+        if (null == sessionEntity.getManualReply()) {
+            sessionEntity.setManualReply(false);
         }
         if (null == sessionEntity.getUserRequestRobotNum()) {
             sessionEntity.setUserRequestRobotNum(0);
@@ -55,8 +56,8 @@ public class SessionServiceImpl implements SessionService {
         if (null == sessionEntity.getUserRequestManualNum()) {
             sessionEntity.setUserRequestManualNum(0);
         }
-        if (null == sessionEntity.getManulReplyNum()) {
-            sessionEntity.setManulReplyNum(0);
+        if (null == sessionEntity.getManualReplyNum()) {
+            sessionEntity.setManualReplyNum(0);
         }
         return null;
     }
@@ -108,13 +109,15 @@ public class SessionServiceImpl implements SessionService {
     public Boolean manualUpdateSession(SessionEntity session) {
         // lambdaUpdate()
         // 客服消息数+1
+        log.info("manualUpdateSession,session:{}", JSONUtil.toJsonStr(session));
         return null;
     }
 
     @Override
-    public Boolean userUpdateSession(SessionEntity session) {
+    public Boolean robotUpdateSession(SessionEntity session) {
         // 用户消息数+1
-        return null;
+        log.info("robotUpdateSession,session:{}", JSONUtil.toJsonStr(session));
+        return true;
     }
 
     // 客服自动分配，只分配一个客服组
