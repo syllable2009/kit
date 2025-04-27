@@ -62,6 +62,11 @@
             <artifactId>aspectjweaver</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-jps-plugin</artifactId>
+            <version>1.7.22</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -71,7 +76,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.7.18</version>
                 <configuration>
-                    <mainClass>com.jxp.HelloApplication</mainClass>
+                    <mainClass>com.jxp.TinyApplication</mainClass>
                     <layout>JAR</layout>
                 </configuration>
                 <executions>

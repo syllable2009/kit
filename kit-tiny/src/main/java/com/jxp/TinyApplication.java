@@ -18,10 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @SpringBootApplication
-public class HelloApplication {
+public class TinyApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(HelloApplication.class, args);
+        SpringApplication.run(TinyApplication.class, args);
     }
 
 

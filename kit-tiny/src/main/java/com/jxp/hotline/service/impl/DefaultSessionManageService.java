@@ -828,12 +828,16 @@ public abstract class DefaultSessionManageService implements SessionManageServic
                 // 排队过程中，暂时发给机器人？
                 if (BooleanUtil.isTrue(upgradeResult)) {
                     // 发送机器人提示排队消息
+                } else {
+                    // 补偿
                 }
             } else {
                 // 分配到客服，客服全局会话数和客服本应用会话数已经+1了
                 final Boolean upgradeResult = handleUpgradeManualSession(groupInfo, distribute.getAssistantInfo(), dbSession);
                 if (BooleanUtil.isTrue(upgradeResult)) {
                     // 发送历史记录和通知
+                }else {
+                    // 补偿
                 }
             }
 
