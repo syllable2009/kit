@@ -235,3 +235,8 @@ apachepulsar/pulsar:3.3.5 \
 bin/pulsar standalone
 
 docker cp pulsar:/pulsar/conf /Users/jiaxiaopeng/docker/pulsar/conf
+
+
+# easyvoice
+docker run -d -p 3000:3000 -v /Users/jiaxiaopeng/docker/easyvoice/audio:/app/audio cosincox/easyvoice:latest
+https://github.com/cosin2077/easyVoice

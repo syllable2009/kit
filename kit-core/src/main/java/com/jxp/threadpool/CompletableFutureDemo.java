@@ -6,6 +6,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -27,6 +28,13 @@ public class CompletableFutureDemo {
             new LinkedBlockingQueue<>(1024), // 任务队列
             new ThreadPoolExecutor.CallerRunsPolicy() // 拒绝策略
     );
+
+    public static <T> CompletableFuture<T> withPool(Supplier<CompletableFuture<T>> supplier) {
+        return supplier.get().exceptionally(ex -> {
+            log.error("withPool error,", ex);
+            return null;
+        });
+    }
 
     @SuppressWarnings("checkstyle:MagicNumber")
     public static void main(String[] args) throws Exception {
@@ -60,6 +68,22 @@ public class CompletableFutureDemo {
         final Integer l = RandomUtil.randomInt(0, 10000);
         ThreadUtil.sleep(l);
         return l;
+    }
+
+    public static void test1() {
+        withPool(() ->
+                CompletableFuture.runAsync(() -> {
+                            // 执行逻辑1，第一个异常已经在pool中执行了
+                        },
+                        COMMON_THREAD_POOL)
+        ).thenRunAsync(() -> {
+                            // 执行逻辑2，需要处理异常，不处理异常就会立刻停止
+                        },
+                        COMMON_THREAD_POOL)
+                .exceptionally(ex -> {
+                    log.error("afterSyncManualSessionToKim error,", ex);
+                    return null;
+                });
     }
 
 }
