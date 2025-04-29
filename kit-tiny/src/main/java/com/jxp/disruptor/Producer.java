@@ -1,6 +1,7 @@
 package com.jxp.disruptor;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Resource;
 
@@ -34,5 +35,17 @@ public class Producer {
 
     public void sendBatch(List<String> dataList) {
         RingBuffer<DemoEvent> ringBuffer = orderDisruptor.getRingBuffer();
+        // 批量获取n个序列号
+        long last = ringBuffer.next(dataList.size());
+        // 计算起始序列号
+        final long first = last - dataList.size() + 1;
+        AtomicLong lo = new AtomicLong(first);
+
+        dataList.forEach(e -> {
+            DemoEvent event = ringBuffer.get(lo.get());
+            event.setValue(e);
+            lo.getAndIncrement();
+        });
+        ringBuffer.publish(first, last);
     }
 }

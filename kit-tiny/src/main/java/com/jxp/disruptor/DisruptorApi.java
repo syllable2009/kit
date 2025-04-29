@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
  * Created on 2025-04-28 21:06
  */
 @Slf4j
-@RestController("/d")
+@RestController
 public class DisruptorApi {
 
     @Resource
@@ -29,7 +29,8 @@ public class DisruptorApi {
         // 单个发送
         final String s = value.replaceAll("，", ",");
         final List<String> split = StrUtil.split(s, ",");
-        split.forEach(e -> producer.send(e));
+//        split.forEach(e -> producer.send(e));
+        producer.sendBatch(split);
         return ResponseEntity.ok("ok");
     }
 }

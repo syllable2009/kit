@@ -29,6 +29,11 @@ public class Application {
     public static void main(String[] args) {
 //        log.info("{}", getLuaScript("a", Lists.newArrayList("2", "1", "3")));
         SpringApplication.run(Application.class, args);
+
+        // jvm钩子模式关闭资源
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // 强制关闭第三方SDK
+        }));
     }
 
     @GetMapping(value = {"/", "/health"})

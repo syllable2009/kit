@@ -13,3 +13,22 @@ public class OrderEventFactory implements EventFactory<OrderEvent> {
 public OrderEvent newInstance() { return new OrderEvent(); }
 }
 
+3.配置disruptor，线程池和异常处理
+
+4.配置生产者
+
+5.关闭阶段强制释放资源
+@PreDestroy
+public void shutdown() {
+if (disruptor != null) {
+disruptor.shutdown(10, TimeUnit.SECONDS);
+if (ringBuffer != null) {
+ringBuffer.remainingCapacity(); // 强制清空缓冲区
+}
+}
+}
+
+
+
+
+
