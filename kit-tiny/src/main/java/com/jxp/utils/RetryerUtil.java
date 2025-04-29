@@ -1,5 +1,6 @@
 package com.jxp.utils;
 
+import java.sql.SQLException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -8,6 +9,7 @@ import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.StopStrategy;
 import com.github.rholder.retry.WaitStrategies;
 import com.github.rholder.retry.WaitStrategy;
+import com.google.common.base.Predicates;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,11 +67,11 @@ public class RetryerUtil {
 
     public static void main(String[] args) throws Exception {
         final Callable<String> p1 = () -> {
-            return null;
+            return "0";
         };
         final String execute = RetryerUtil.execute(p1, RetryPolicy.builder()
-                        .retryIfException(e -> e instanceof Exception)
-                .retryIfResult(r -> null == r)
+                .retryIfException(Predicates.instanceOf(SQLException.class))
+                .retryIfResult(result -> result == null || "Error".equals(result))
                 .build());
         log.info("result:{}", execute);
     }
