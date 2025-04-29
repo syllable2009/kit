@@ -84,6 +84,37 @@ FLUSH PRIVILEGES;  -- 刷新权限
 
 CREATE DATABASE erupt CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+# elasticsearch
+docker run -d \
+--name es7 \
+-e "ES_JAVA_OPTS=-Xms512m -Xmx1g" \
+-e "discovery.type=single-node" \
+-v /Users/jiaxiaopeng/docker/es7/data:/usr/share/elasticsearch/data \
+-v /Users/jiaxiaopeng/docker/es7/plugins:/usr/share/elasticsearch/plugins \
+-v /Users/jiaxiaopeng/docker/es7/config:/usr/share/elasticsearch/config \
+-v /Users/jiaxiaopeng/docker/es7/logs:/usr/share/elasticsearch/logs \
+--privileged \
+--network mynet \
+-p 9200:9200 \
+-p 9300:9300 \
+elasticsearch:7.12.1
+docker cp es:/usr/share/elasticsearch/config /Users/jiaxiaopeng/docker/es7
+安装分词器
+docker exec -it es7 bash
+cd /usr/share/elasticsearch/bin
+./elasticsearch-plugin  install https://release.infinilabs.com/analysis-ik/stable/elasticsearch-analysis-ik-7.12.1.zip
+
+
+# kibana
+docker run -d \
+--name kibana \
+-e ELASTICSEARCH_HOSTS=http://es7:9200 \
+--network=mynet \
+-p 5601:5601  \
+kibana:7.12.1
+
+容器在同一个网络，因此可以用容器名直接访问
+
 # javaSP java刮削
 https://github.com/Yuukiy/JavSP.git
 docker run -it -d \
@@ -240,3 +271,13 @@ docker cp pulsar:/pulsar/conf /Users/jiaxiaopeng/docker/pulsar/conf
 # easyvoice
 docker run -d -p 3000:3000 -v /Users/jiaxiaopeng/docker/easyvoice/audio:/app/audio cosincox/easyvoice:latest
 https://github.com/cosin2077/easyVoice
+
+# Blade：一款追求简约、高效的 Web 框架，基于 Java8 + Netty4。
+https://github.com/lets-blade/blade
+
+# Javalin：一个轻量级的 Web 框架，同时支持 Java 和 Kotlin，被微软、红帽、Uber 等公司使用。
+https://github.com/javalin/javalin
+
+# 数字人Heygem
+
+# 文本语音互转chattts
