@@ -34,7 +34,9 @@ public class Producer {
     }
 
     public void sendBatch(List<String> dataList) {
+
         RingBuffer<DemoEvent> ringBuffer = orderDisruptor.getRingBuffer();
+        // 如果需要严格按照序列消费
         // 批量获取n个序列号
         long last = ringBuffer.next(dataList.size());
         // 计算起始序列号

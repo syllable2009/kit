@@ -1,5 +1,6 @@
 package com.jxp.disruptor;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -8,9 +9,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
+import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.ExceptionHandler;
-import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
@@ -48,17 +49,29 @@ public class DisruptorConfig {
 
         // 定义事件工厂，预分配事件对象，减少GC压力
         EventFactory<DemoEvent> eventFactory = () -> new DemoEvent();
+//        final Disruptor<DemoEvent> orderDisruptor = new Disruptor<>(
+//                eventFactory,
+//                bufferSize,  // 缓冲区大小（需为2^n）
+//                disruptorExecutors,
+//                ProducerType.MULTI,  // 多生产者模式
+//                new YieldingWaitStrategy()  // 低延迟策略  new BlockingWaitStrategy() //等待模式
+//        );
+
+        // 如果保证序列顺序消费，单线程消费+单线程生产
         final Disruptor<DemoEvent> orderDisruptor = new Disruptor<>(
                 eventFactory,
                 bufferSize,  // 缓冲区大小（需为2^n）
-                disruptorExecutors,
-                ProducerType.MULTI,  // 多生产者模式
-                new YieldingWaitStrategy()  // 低延迟策略  new BlockingWaitStrategy() //等待模式
+                Executors.newSingleThreadExecutor(),
+                ProducerType.SINGLE,
+                new BlockingWaitStrategy()  //等待模式
         );
+
+
         // 注册消费者
         final Consumer first = new Consumer("first");
         final Consumer second = new Consumer("second");
         final Consumer third = new Consumer("third");
+
         // 分组消费：每个生产者生产的数据只能被一个消费者消费
         orderDisruptor.handleEventsWithWorkerPool(first, second, third);
         // 测试重复消费：每个消费者重复消费生产者生产的数据
@@ -67,11 +80,7 @@ public class DisruptorConfig {
 //        orderDisruptor.handleEventsWith(third).then(first).then(second);
         // 测试钻石模式
 //        orderDisruptor.handleEventsWithWorkerPool(third, second).then(first);
-        // 启动
         // 设置异常
-//        orderDisruptor.setDefaultExceptionHandler((? extends DemoEvent)->{
-//        });
-
         orderDisruptor.setDefaultExceptionHandler(new ExceptionHandler<DemoEvent>() {
             @Override
             public void handleEventException(Throwable ex, long sequence, DemoEvent event) {
@@ -88,7 +97,7 @@ public class DisruptorConfig {
                 log.error("消费者停止异常,", ex);
             }
         });
-
+        // 启动并绑定序列
         orderDisruptor.start();
         return orderDisruptor;
     }
