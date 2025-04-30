@@ -10,7 +10,7 @@ import com.jxp.easyes.domain.EsProduct;
  */
 public interface EsProductService {
 
-    int importAll();
+    Integer importAll(List<EsProduct> dataList);
 
     void delete(Long id);
 

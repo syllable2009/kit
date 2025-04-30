@@ -10,14 +10,20 @@ import cn.easyes.annotation.IndexName;
 import cn.easyes.annotation.Score;
 import cn.easyes.common.enums.FieldType;
 import cn.easyes.common.enums.IdType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 /**
  * 搜索商品的信息
  * @author jiaxiaopeng
  * Created on 2025-04-29 17:48
  */
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 @EqualsAndHashCode
 @IndexName(value = "pms", shardsNum = 1, replicasNum = 0)

@@ -281,3 +281,10 @@ https://github.com/javalin/javalin
 # 数字人Heygem
 
 # 文本语音互转chattts
+
+# any-listen web听歌服务
+https://github.com/any-listen/any-listen
+docker run -d --name listen -p 9500:9500 lyswhut/any-listen-web-server:latest
+
+docker run -d --name listen --volume=/Users/jiaxiaopeng/docker/listen/music:/music \ 
+--volume=/Users/jiaxiaopeng/docker/listen/data:/server/data -p 9500:9500 lyswhut/any-listen-web-server:latest

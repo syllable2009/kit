@@ -1,15 +1,17 @@
 package com.jxp.easyes.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.google.common.collect.Lists;
 import com.jxp.easyes.domain.EsProduct;
 import com.jxp.easyes.mapper.EsProductMapper;
 import com.jxp.easyes.service.EsProductService;
+
+import cn.hutool.core.collection.CollUtil;
 
 /**
  * @author jiaxiaopeng
@@ -22,9 +24,11 @@ public class EsProductServiceImpl implements EsProductService {
     private EsProductMapper esProductMapper;
 
     @Override
-    public int importAll() {
-        List<EsProduct> esProductList = Lists.newArrayList();
-        return esProductMapper.insertBatch(esProductList);
+    public Integer importAll(List<EsProduct> dataList) {
+        if (CollUtil.isEmpty(dataList)) {
+            return 0;
+        }
+        return esProductMapper.insertBatch(dataList);
     }
 
     @Override
@@ -32,11 +36,22 @@ public class EsProductServiceImpl implements EsProductService {
         esProductMapper.deleteById(id);
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public EsProduct create(Long id) {
-        EsProduct result = null;
-        esProductMapper.insert(result);
-        return result;
+        EsProduct product = EsProduct.builder()
+                .id(id)
+                .brandId(id)
+                .productSn("4566690")
+                .productCategoryId(1L)
+                .productCategoryName("3C数码")
+                .name("耳机1")
+                .keywords("索尼耳机")
+                .price(BigDecimal.valueOf(100))
+                .sort(99)
+                .build();
+        esProductMapper.insert(product);
+        return product;
     }
 
     @Override

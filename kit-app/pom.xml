@@ -39,6 +39,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>  <!-- 排除 JUnit 4 兼容模块:ml-citation{ref="1,6" data="citationList"} -->
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
