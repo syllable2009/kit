@@ -6,3 +6,8 @@ demo:
 
 server:
   port: 8086
+
+
+meilisearch:
+  host: http://localhost:7700
+  index: products
