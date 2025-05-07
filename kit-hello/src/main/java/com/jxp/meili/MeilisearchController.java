@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Index;
 import com.meilisearch.sdk.SearchRequest;
+import com.meilisearch.sdk.model.MatchingStrategy;
 import com.meilisearch.sdk.model.Searchable;
 import com.meilisearch.sdk.model.Settings;
 import com.meilisearch.sdk.model.TaskInfo;
@@ -83,7 +84,9 @@ public class MeilisearchController {
             @RequestParam(required = false) String productCategoryName,
             @RequestParam(required = false, value = "0->按价格升序；1->按价格降序") Integer order) {
         SearchRequest.SearchRequestBuilder searchBuilder = SearchRequest.builder();
-//        searchBuilder.attributesToSearchOn(new String[]{"id","name"}); // 设置检索字段
+        searchBuilder.attributesToSearchOn(new String[]{"name", "subTitle"}); // 设置检索字段
+        searchBuilder.attributesToHighlight(new String[]{"name", "subTitle"});
+        searchBuilder.matchingStrategy(MatchingStrategy.ALL);
         searchBuilder.page(pageNum);
         searchBuilder.hitsPerPage(pageSize);
         if (StrUtil.isNotEmpty(keyword)) {
