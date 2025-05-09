@@ -32,6 +32,11 @@ public class NettyServer {
                         //责任链，指定自定义处理业务的 Handler
                         ch.pipeline().addLast(new NettyServerHandler());
                     }
+                }).handler(new ChannelInitializer<NioServerSocketChannel>() {
+                    // handler () 用于指定在服务端启动过程中的一些逻辑。
+                    protected void initChannel(NioServerSocketChannel ch) {
+                        System.out.println("服务端启动中");
+                    }
                 });
         //绑定端口号
         serverBootstrap.bind(80);
