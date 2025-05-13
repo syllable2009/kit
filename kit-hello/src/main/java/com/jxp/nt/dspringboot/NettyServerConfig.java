@@ -4,6 +4,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.jxp.nt.done.MyDecoder;
+import com.jxp.nt.done.MyEncoder;
+import com.jxp.nt.done.handler.LoginReqHandler;
+import com.jxp.nt.done.handler.MsgReqHandler;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -11,6 +16,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
 /**
  * @author jiaxiaopeng
@@ -32,7 +38,7 @@ public class NettyConfig {
      * @return
      */
     @Bean
-    public NioEventLoopGroup boosGroup() {
+    public NioEventLoopGroup bossGroup() {
         return new NioEventLoopGroup(nettyProperties.getBoss());
     }
 
@@ -52,10 +58,10 @@ public class NettyConfig {
      * @return
      */
     @Bean
-    public ServerBootstrap serverBootstrap() {
+    public ServerBootstrap serverBootstrap(NioEventLoopGroup bossGroup, NioEventLoopGroup workerGroup) {
         ServerBootstrap serverBootstrap = new ServerBootstrap()
                 // 指定使用的线程组
-                .group(boosGroup(), workerGroup())
+                .group(bossGroup, workerGroup)
                 // 指定使用的通道
                 .channel(NioServerSocketChannel.class)
                 // 指定tcp连接超时时间
@@ -66,13 +72,11 @@ public class NettyConfig {
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline pipeline = socketChannel.pipeline();
                         // 使用自定义处理拆包/沾包，并且每次查找的最大长度为1024字节
-//                        pipeline.addLast(new DelimiterBasedFrameDecoder(1024, delimiter));
-//                        // 将上一步解码后的数据转码为Message实例
-//                        pipeline.addLast(new MessageDecodeHandler());
-//                        // 对发送客户端的数据进行编码，并添加数据分隔符
-//                        pipeline.addLast(new MessageEncodeHandler(delimiterStr));
-//                        // 对数据进行最终处理
-//                        pipeline.addLast(new ServerListenerHandler());
+                        pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 5, 4));
+                        pipeline.addLast(new MyDecoder());
+                        pipeline.addLast(new LoginReqHandler());
+                        pipeline.addLast(new MsgReqHandler());
+                        pipeline.addLast(new MyEncoder());
                     }
                 });
         return serverBootstrap;
