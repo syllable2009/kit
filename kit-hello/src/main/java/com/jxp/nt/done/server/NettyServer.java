@@ -29,8 +29,13 @@ public class NettyServer {
                 //双向链表管理
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     protected void initChannel(NioSocketChannel ch) {
+                        //1.解码器
+                        //2.编码器
                         //责任链，指定自定义处理业务的 Handler
-                        ch.pipeline().addLast(new NettyServerHandler());
+                        ch.pipeline()
+                                .addLast()
+                                .addLast()
+                                .addLast(new NettyServerHandler());
                     }
                 }).handler(new ChannelInitializer<NioServerSocketChannel>() {
                     // handler () 用于指定在服务端启动过程中的一些逻辑。

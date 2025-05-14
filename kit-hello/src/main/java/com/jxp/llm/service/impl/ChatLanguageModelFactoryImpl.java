@@ -17,12 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ChatLanguageModelFactoryImpl implements ChatLanguageModelFactory {
 
-    // 创建路由模型
-    RoutingModel<ChatModel> router = new RoutingModel<>(model -> {
-        if (isCodeTask(input)) return codeReviewModel;
-        else return dataAnalysisModel;
-    });
-
     @Override
     public StreamingChatLanguageModel create(LlmChatRequest request, ModelProvider provider) {
         return null;

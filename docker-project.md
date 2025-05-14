@@ -104,6 +104,17 @@ docker exec -it es7 bash
 cd /usr/share/elasticsearch/bin
 ./elasticsearch-plugin  install https://release.infinilabs.com/analysis-ik/stable/elasticsearch-analysis-ik-7.12.1.zip
 
+# meilisearch
+
+docker run -it -d \
+-p 7700:7700 \
+-v /Users/jiaxiaopeng/docker/meili/data:/meili_data \
+--network mynet \
+-e MEILI_NO_ANALYTICS=true \
+-e MEILI_MASTER_KEY=R5T5WDon_QrPqhFK97NgGlTVa81iuVlN44TMLiClTTg \
+--name meili \
+getmeili/meilisearch:v1.14
+
 
 # kibana
 docker run -d \
@@ -288,3 +299,22 @@ docker run -d --name listen -p 9500:9500 lyswhut/any-listen-web-server:latest
 
 docker run -d --name listen --volume=/Users/jiaxiaopeng/docker/listen/music:/music \ 
 --volume=/Users/jiaxiaopeng/docker/listen/data:/server/data -p 9500:9500 lyswhut/any-listen-web-server:latest
+
+
+
+# localai
+docker run -ti -d --name local-ai -p 8080:8080 localai/localai:latest-cpu
+
+docker run -ti -d --name local-ai -p 8080:8080 localai/localai:master-aio-cpu
+
+
+# easy-gate Easy Gate 是一款简易的 Web 应用程序，旨在作为您自托管基础设施的中心枢纽。
+https://github.com/wiredlush/easy-gate
+docker run -d --name=easy-gate \
+-p 8080:8080 \
+--network mynet \
+-v /Users/jiaxiaopeng/docker/gate/easy-gate.json:/etc/easy-gate/easy-gate.json \
+--restart unless-stopped \
+wiredlush/easy-gate:2.0.3
+
+

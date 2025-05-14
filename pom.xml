@@ -19,6 +19,7 @@
         <module>kit-demo</module>
         <module>kit-core</module>
         <module>kit-hello</module>
+        <module>kit-netty</module>
     </modules>
 
     <properties>
