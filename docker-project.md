@@ -318,3 +318,8 @@ docker run -d --name=easy-gate \
 wiredlush/easy-gate:2.0.3
 
 
+# streamdock电视网页直播
+docker run -d --name streamdock --network host --restart unless-stopped ghcr.io/limmer55/streamdock:latest
+
+
+
