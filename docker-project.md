@@ -152,6 +152,40 @@ suwmlee/ikaros:lates
 xxxsen/yamdc:latest
 https://github.com/xxxsen/yamdc
 
+# Stash
+可以刮削视频，图片
+https://github.com/stashapp/stash
+
+docker run -d \
+--name stash \
+--restart unless-stopped \
+--network bridge \
+-p 9909:9999 \
+--log-driver "json-file" \
+--log-opt max-file=10 \
+--log-opt max-size=2m \
+-e STASH_STASH=/data/ \
+-e STASH_GENERATED=/generated/ \
+-e STASH_METADATA=/metadata/ \
+-e STASH_CACHE=/cache/ \
+-e STASH_PORT=9999 \
+-v /etc/localtime:/etc/localtime:ro \
+-v /Users/jiaxiaopeng/docker/crash/config:/root/.stash \
+-v /Users/jiaxiaopeng/docker/crash/data:/data \
+-v /Users/jiaxiaopeng/docker/crash/metadata:/metadata \
+-v /Users/jiaxiaopeng/docker/crash/cache:/cache \
+-v /Users/jiaxiaopeng/docker/crash/blobs:/blobs \
+-v /Users/jiaxiaopeng/docker/crash/generated:/generated \
+stashapp/stash:latest
+
+配置文件位置：
+/root/.stash/config.yml
+Stash 库目录
+数据库文件路径
+/root/.stash/stash-go.sqlite
+二进制数据目录
+/root/.stash/blobs
+
 # Erupt
 https://www.erupt.xyz/#!/doc
 
