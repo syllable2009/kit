@@ -356,4 +356,10 @@ wiredlush/easy-gate:2.0.3
 docker run -d --name streamdock --network host --restart unless-stopped ghcr.io/limmer55/streamdock:latest
 
 
+# Lucky 动态域名+自动证书+反代，傻瓜式设置，非常不错
+https://lucky666.cn/
+https://github.com/gdy666/lucky?tab=readme-ov-file#docker%E4%B8%AD%E4%BD%BF%E7%94%A8
+docker run -d --name lucky --restart=always -p 16601:16601 gdy666/lucky
+
+
 
