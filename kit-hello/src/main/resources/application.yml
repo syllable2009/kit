@@ -13,7 +13,6 @@ meilisearch:
   index: products
 
 
-
 # netty 配置
 netty:
   # boss线程数量

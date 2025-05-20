@@ -85,16 +85,18 @@ public class MeilisearchController {
             @RequestParam(required = false, value = "0->按价格升序；1->按价格降序") Integer order) {
         SearchRequest.SearchRequestBuilder searchBuilder = SearchRequest.builder();
         searchBuilder.attributesToSearchOn(new String[]{"name", "subTitle"}); // 设置检索字段
-        searchBuilder.attributesToHighlight(new String[]{"name", "subTitle"});
+        searchBuilder.attributesToHighlight(new String[]{"name", "subTitle"}); //设置高亮字段
         searchBuilder.matchingStrategy(MatchingStrategy.ALL);
-        searchBuilder.page(pageNum);
-        searchBuilder.hitsPerPage(pageSize);
+        searchBuilder.page(pageNum);  // 页码，从1开始
+        searchBuilder.hitsPerPage(pageSize); // 每页数量
         if (StrUtil.isNotEmpty(keyword)) {
-            searchBuilder.q(keyword);
+            searchBuilder.q(keyword);  // 搜索的关键字
         }
+        // 过滤的条件
         if (StrUtil.isNotEmpty(productCategoryName)) {
             searchBuilder.filter(new String[]{"productCategoryName=" + productCategoryName});
         }
+        // 排序的条件
         if (order != null) {
             if (order == 0) {
                 searchBuilder.sort(new String[]{"price:asc"});
