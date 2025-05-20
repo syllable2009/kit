@@ -1,5 +1,8 @@
 package com.jxp.llm.embedding.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,8 +21,8 @@ public class SegmentRule {
     private String segmentType;
     // 自定义分段方式：换行 中文句号 英文句号 自定义
     private String segmentMethod;
-    // 自定义分段值
-    private String segmentValue;
+    // 自定义分割字符串
+    private List<String> characters = new ArrayList<>();
     // 分隔最小字符
     private Integer minLen = 100;
     // 分隔最大字符

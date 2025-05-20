@@ -1,18 +1,29 @@
 package com.jxp.llm.embedding.service.impl;
 
+import java.io.File;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.annotation.Resource;
+
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.jxp.llm.embedding.dto.SegmentRule;
+import com.jxp.llm.embedding.service.MSWordContentService;
+import com.jxp.llm.embedding.service.PDFContentService;
 import com.jxp.llm.embedding.service.SegmentService;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.PatternPool;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
@@ -32,16 +43,13 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class SegmentServiceImpl implements SegmentService {
 
-    @SuppressWarnings("checkstyle:MagicNumber")
-    @Override
-    public List<TextSegment> segment(Document document, SegmentRule rule) {
-        // 分段预处理
-        contextProcessBeforeSplit("", rule);
+    @Resource
+    private MSWordContentService msWordContentService;
+    @Resource
+    private PDFContentService pdfContentService;
 
-        // 字符分割器（CharacterSplitter）块大小5000字符，重叠5字符
-        DocumentSplitter splitter = DocumentSplitters.recursive(5000, 5);
-        return splitter.split(document);
-    }
+    private ObjectMapper objectMapper = new ObjectMapper();
+
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:LineLength", "checkstyle:MagicNumber"})
     public static void main(String[] args) {
@@ -54,7 +62,6 @@ public class SegmentServiceImpl implements SegmentService {
                 .removeEmail(true)
                 .removeUrl(true)
                 .replaceConsecutiveSymbols(true)
-                .segmentValue("")
                 .segmentType("self")
                 .build();
 
@@ -65,8 +72,9 @@ public class SegmentServiceImpl implements SegmentService {
 
         List<String> textList;
         // 获取分隔符
-        final String segmentValue = rule.getSegmentValue();
-        if (StrUtil.isNotBlank(segmentValue)) {
+        final List<String> characters = rule.getCharacters();
+
+        if (CollUtil.isNotEmpty(characters)) {
             // 默认分段方式
             String regexp = String.join("|", Lists.newArrayList("\\n", "\\.", "。"));
             textList = Arrays.asList(preHandleStr.split("(" + regexp + ")"));
@@ -162,5 +170,140 @@ public class SegmentServiceImpl implements SegmentService {
             rs.add(text);
         }
         return rs;
+    }
+
+
+    @Override
+    public List<String> segment(String fileType, String fileId, SegmentRule rule) {
+
+        File file = null;
+        List<String> textList = List.of();
+        String context = null;
+//        File file = resourceService.getFile(fileId);
+        switch (fileType) {
+            case "word":
+                context = msWordContentService.extractContext(file);
+                textList = splitTxt(context, rule);
+                break;
+            case "excel":
+                break;
+            case "pdf":
+                context = pdfContentService.extractContext("fileId", file);
+                textList = splitTxt(context, rule);
+                break;
+            case "txt":
+                context = getTxtContent(file);
+                textList = splitTxt(context, rule);
+                break;
+            case "jsonArray":
+                context = getTxtContent(file);
+                // 如果是 JSON_ARRAY 类型的结构化文档, 这个字段存储的是需要向量化的多个字段名称, 格式: ["a", "b.c"]
+                String fields = null;
+                Map<String, List<String>> kv = splitJsonArray(context, fields);
+                for (String k : kv.keySet()) {
+                    for (String v : kv.get(k)) {
+                        textList.add(k);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        return textList;
+    }
+
+    private String getTxtContent(File file) {
+        String content = "";
+        try {
+            content = FileUtil.readString(file, Charset.defaultCharset());
+        } catch (Throwable th) {
+            log.info("getTxtContent error {}", th.getMessage());
+        }
+        return content;
+    }
+
+
+    /**
+     * 非结构化的文本分段
+     */
+    @Override
+    public List<String> splitTxt(String context, SegmentRule rule) {
+        if (StrUtil.isBlank(context)) {
+            return new ArrayList<>();
+        }
+        List<String> textList;
+        context = contextProcessBeforeSplit(context, rule);
+//        默认的分隔符
+//        characters = Lists.newArrayList("\\n", "\\.", "。");
+        // 分割文档
+        if (CollUtil.isNotEmpty(rule.getCharacters())) {
+            String regexp = String.join("|", rule.getCharacters());
+            textList = Arrays.asList(context.split("(" + regexp + ")"));
+            textList = merge(textList, rule);
+        } else {
+            // load
+            Document document = Document.from(context);
+            // split: 如果配置了字符串, 按配置字符串分隔; 否则使用默认分隔.
+            DocumentSplitter splitter = DocumentSplitters.recursive(rule.getMaxLen(), rule.getOverlap());
+            List<TextSegment> segments = splitter.split(document);
+            textList = Optional.ofNullable(segments).orElse(new ArrayList<>()).stream()
+                    .map(TextSegment::text)
+                    .collect(Collectors.toList());
+            textList = merge(textList, rule);
+        }
+        return textList;
+    }
+
+    public Map<String, List<String>> splitJsonArray(String jsonArray, String keyPathsStr) {
+        Map<String, List<String>> map = new LinkedHashMap<>();
+        try {
+            JsonNode rootNode = objectMapper.readTree(jsonArray);
+            List<String> keyPaths = StrUtil.isBlank(keyPathsStr)
+                    ? null
+                    : JSONUtil.toList(keyPathsStr, String.class);
+            for (JsonNode node : rootNode) {
+                StringBuilder sb = new StringBuilder();
+                if (null == keyPaths) {
+                    sb.append(node.toString());
+                } else {
+                    for (String keyPath : keyPaths) {
+                        String val = getString(node, keyPath);
+                        if (StrUtil.isNotBlank(val)) {
+                            sb.append(val).append(System.lineSeparator());
+                        }
+                    }
+                }
+                if (sb.length() > 0) {
+                    map.putIfAbsent(sb.toString(), new ArrayList<>());
+                    map.get(sb.toString()).add(node.toString());
+                }
+            }
+            return map;
+        } catch (Throwable th) {
+            log.error("splitJsonArray error: {}", jsonArray);
+            log.error(th.getMessage(), th);
+            return map;
+        }
+    }
+
+    /**
+     * 从 JsonNode 结构中, 提取 keyPath 的值
+     */
+    public static String getString(JsonNode node, String keyPath) {
+        String[] keys = keyPath.split("\\.");
+        String val = null;
+        JsonNode currentNode = node;
+        for (String key : keys) {
+            if (currentNode.has(key)) {
+                currentNode = currentNode.get(key);
+            } else {
+                currentNode = null;
+                break;
+            }
+        }
+        if (currentNode != null) {
+            val = currentNode.isValueNode() ? currentNode.asText() : currentNode.toString();
+        }
+        return val;
     }
 }
