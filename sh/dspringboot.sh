@@ -17,6 +17,7 @@ PORT=${2:-$DEFAULT_PORT}           # 第二参数：映射端口（默认8080）
 
 # ============= 1. 项目打包 =============
 echo "🔨 开始打包项目 (使用${PROFILE}环境配置)..."
+cd ${PROJECT_PATH}
 mvn clean package -DskipTests -P${PROFILE}
 
 if [ $? -ne 0 ]; then
@@ -50,7 +51,8 @@ COPY ${jar_file} app.jar
 EXPOSE ${PORT}
 
 # 启动应用（增加随机熵源加速启动）
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar", "--spring.profiles.active=${PROFILE}"]
+ENTRYPOINT ["java","-Xms256m","-Xmx256m", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar", "--spring.profiles
+.active=${PROFILE}"]
 EOF
 
 echo "📄 Dockerfile内容:"
