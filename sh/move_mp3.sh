@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+shopt -s dotglob  # 启用隐藏文件匹配
 # 严格模式
 # -e: 命令失败立即退出。
 #-u: 使用未定义变量立即退出。
@@ -65,6 +66,7 @@ traverse2() {
 
 traverse() {
     local dir="$1"
+    # "$dir"/* 匹配当前路径下的所有内容，"$dir"仅仅匹配当前路径
     for item in "$dir"/*; do
         if [[ -f "$item" ]]; then
             move_file "$item"
@@ -85,3 +87,4 @@ else
     echo >&2 "Warning: Completed with errors (moved $count files)"
     exit 1
 fi
+shopt -u dotglob  # 恢复默认设置（可选）
