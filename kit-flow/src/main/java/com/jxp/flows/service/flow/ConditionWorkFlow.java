@@ -7,7 +7,6 @@ import org.springframework.util.CollectionUtils;
 import com.google.common.collect.Lists;
 import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.NodeResult;
-import com.jxp.flows.enums.NodeState;
 import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.infs.INode;
 import com.jxp.flows.infs.IPredicate;
@@ -41,12 +40,28 @@ public class ConditionWorkFlow extends AbstractNodeFlow {
     }
 
     @Override
-    public NodeResult execute(FlowContext flowContext) {
+    public boolean execute(FlowContext flowContext) {
         final List<Pair<IPredicate, INode>> nodes = this.getConditions();
         if (CollectionUtils.isEmpty(nodes)) {
-            return NodeResult.fail(flowContext, "no node exec");
+            this.setNodeResult(NodeResult.fail(flowContext, "no node exec"));
+            return false;
         }
         // 判断条件
+        for (Pair<IPredicate, INode> pair : nodes) {
+            if (pair.getKey().apply(null)) {
+                final boolean execute = pair.getValue().execute(flowContext);
+                if (execute) {
+                    // 保存结果
+                    flowContext.putExecuteNode(pair.getValue().getNodeId(), pair.getValue());
+                    this.setNodeResult(NodeResult.success(flowContext, null));
+                    return true;
+                } else {
+                    this.setNodeResult(NodeResult.fail(flowContext, "exec failed"));
+                    return false;
+                }
+            }
+        }
+        return false;
 //        for (INode node : nodes) {
 //            final NodeResult execute = node.execute(flowContext);
 //            if (null == execute) {
@@ -56,7 +71,7 @@ public class ConditionWorkFlow extends AbstractNodeFlow {
 //                return NodeResult.fail(flowContext, "node state is failed");
 //            }
 //        }
-        return NodeResult.builder().state(NodeState.COMPLETED).nodeContext(flowContext).build();
+//        return NodeResult.builder().state(NodeState.COMPLETED).nodeContext(flowContext).build();
     }
 
     @Override

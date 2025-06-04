@@ -6,7 +6,6 @@ import org.springframework.util.CollectionUtils;
 
 import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.NodeResult;
-import com.jxp.flows.enums.NodeState;
 import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.infs.INode;
 import com.jxp.flows.service.AbstractNodeFlow;
@@ -48,22 +47,24 @@ public class SequentialWorkFlow extends AbstractNodeFlow {
     }
 
     @Override
-    public NodeResult execute(FlowContext flowContext) {
+    public boolean execute(FlowContext flowContext) {
         final List<INode> nodes = this.getNodes();
         if (CollectionUtils.isEmpty(nodes)) {
-            return NodeResult.fail(flowContext, "no node exec");
+            this.setNodeResult(NodeResult.fail(flowContext, "no node exec"));
+            return false;
         }
         // 顺序执行
         for (INode node : nodes) {
-            final NodeResult execute = node.execute(flowContext);
-            if (null == execute) {
-                return NodeResult.fail(flowContext, "node result is null");
-            }
-            if (NodeState.FAILED == execute.getState()) {
-                return NodeResult.fail(flowContext, "node state is failed");
+            final boolean execute = node.execute(flowContext);
+            if (execute) {
+                node.setNodeResult(NodeResult.fail(flowContext, "node result is null"));
+                return true;
+            } else {
+                node.setNodeResult(NodeResult.success(flowContext, null));
+                flowContext.putExecuteNode(node.getNodeId(), node);
             }
         }
-        return NodeResult.builder().state(NodeState.COMPLETED).nodeContext(flowContext).build();
+        return true;
     }
 
     @Override

@@ -1,6 +1,8 @@
 package com.jxp.flows.domain;
 
 
+import java.util.List;
+
 import com.jxp.flows.enums.NodeState;
 
 import lombok.AllArgsConstructor;
@@ -29,6 +31,7 @@ public class NodeResult {
 
     private FlowContext nodeContext;
 
+    private List<Param> output;
 
     public static NodeResult fail(FlowContext nodeContext, String message) {
         return NodeResult.builder()
@@ -38,10 +41,11 @@ public class NodeResult {
                 .build();
     }
 
-    public static NodeResult success(FlowContext nodeContext) {
+    public static NodeResult success(FlowContext nodeContext, List<Param> output) {
         return NodeResult.builder()
                 .nodeContext(nodeContext)
                 .state(NodeState.COMPLETED)
+                .output(output)
                 .build();
     }
 }

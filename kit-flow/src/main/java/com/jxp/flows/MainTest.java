@@ -2,9 +2,7 @@ package com.jxp.flows;
 
 import com.google.common.collect.Lists;
 import com.jxp.flows.domain.FlowContext;
-import com.jxp.flows.domain.NodeResult;
 import com.jxp.flows.domain.Param;
-import com.jxp.flows.enums.NodeState;
 import com.jxp.flows.service.ExecuteChain;
 import com.jxp.flows.service.flow.ConditionWorkFlow;
 import com.jxp.flows.service.flow.SequentialWorkFlow;
@@ -37,16 +35,16 @@ public class MainTest {
                 .build();
 
 
-        final NodeResult execute = workflow.execute(FlowContext.builder().build());
-        final NodeState state = execute.getState();
-        final FlowContext workContext = execute.getNodeContext();
+//        final NodeResult execute = workflow.execute(FlowContext.builder().build());
+//        final NodeState state = execute.getState();
+//        final FlowContext workContext = execute.getNodeContext();
 
 
         ConditionWorkFlow.builder().when((r) -> {
-                    System.out.println("");
+                    System.out.println("1");
                     return false;
                 }, null).when((r) -> {
-                    System.out.println("");
+                    System.out.println("2");
                     return false;
                 }, null).otherwise(null).build()
                 .execute(FlowContext.builder().build());

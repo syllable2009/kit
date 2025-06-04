@@ -1,19 +1,13 @@
 package com.jxp.flows.service.flow;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-
-import org.springframework.util.CollectionUtils;
 
 import com.jxp.flows.domain.FlowContext;
-import com.jxp.flows.domain.NodeResult;
-import com.jxp.flows.enums.NodeState;
 import com.jxp.flows.enums.NodeTypeEnum;
-import com.jxp.flows.service.AbstractNodeFlow;
 import com.jxp.flows.infs.INode;
+import com.jxp.flows.service.AbstractNodeFlow;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -58,27 +52,28 @@ public class ParallelWorkFlow extends AbstractNodeFlow {
     }
 
     @Override
-    public NodeResult execute(FlowContext flowContext) {
-        final List<INode> nodes = this.getNodes();
-        if (CollectionUtils.isEmpty(nodes)) {
-            return NodeResult.fail(flowContext, "no node exec");
-        }
-        // 并行执行
-        final List<NodeResult> result = nodes.stream()
-                .map(e -> CompletableFuture.supplyAsync(
-                        () -> e.execute(flowContext), executor))
-                .map(CompletableFuture::join)
-                .collect(Collectors.toList());
-        // 判断执行结果
-        for (NodeResult execute : result) {
-            if (null == execute) {
-                return NodeResult.fail(flowContext, "node result is null");
-            }
-            if (NodeState.FAILED == execute.getState()) {
-                return NodeResult.fail(flowContext, "node state is failed");
-            }
-        }
-        return NodeResult.builder().state(NodeState.COMPLETED).nodeContext(flowContext).build();
+    public boolean execute(FlowContext flowContext) {
+//        final List<INode> nodes = this.getNodes();
+//        if (CollectionUtils.isEmpty(nodes)) {
+//            return NodeResult.fail(flowContext, "no node exec");
+//        }
+//        // 并行执行
+//        final List<NodeResult> result = nodes.stream()
+//                .map(e -> CompletableFuture.supplyAsync(
+//                        () -> e.execute(flowContext), executor))
+//                .map(CompletableFuture::join)
+//                .collect(Collectors.toList());
+//        // 判断执行结果
+//        for (NodeResult execute : result) {
+//            if (null == execute) {
+//                return NodeResult.fail(flowContext, "node result is null");
+//            }
+//            if (NodeState.FAILED == execute.getState()) {
+//                return NodeResult.fail(flowContext, "node state is failed");
+//            }
+//        }
+//        return NodeResult.builder().state(NodeState.COMPLETED).nodeContext(flowContext).build();
+        return true;
     }
 
     @Override

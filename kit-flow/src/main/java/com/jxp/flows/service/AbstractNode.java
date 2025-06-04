@@ -2,6 +2,7 @@ package com.jxp.flows.service;
 
 import java.util.List;
 
+import com.jxp.flows.domain.NodeResult;
 import com.jxp.flows.domain.Param;
 import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.infs.INode;
@@ -28,7 +29,7 @@ public abstract class AbstractNode implements INode {
 
     private List<Param> input;
 
-    private List<Param> output;
+    private NodeResult nodeResult;
 
     public INode set(INode node) {
         this.node = node;

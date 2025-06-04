@@ -19,11 +19,13 @@ public interface INode {
 
     String getName();
 
+    void setNodeResult(NodeResult nodeResult);
+
     default String getRunId() {
         return UUID.randomUUID().toString();
     }
 
-    NodeResult execute(FlowContext context);
+    boolean execute(FlowContext context);
 
     NodeTypeEnum getNodeType();
 
@@ -31,7 +33,7 @@ public interface INode {
         return Collections.EMPTY_LIST;
     }
 
-    default List<Param> getOutput() {
-        return Collections.EMPTY_LIST;
+    default NodeResult getResult() {
+        return null;
     }
 }
