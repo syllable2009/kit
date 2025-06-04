@@ -1,11 +1,34 @@
 #!/bin/bash
 PROJECT_PATH="/Users/jiaxiaopeng/github/kit/kit-font"
 
+#       <plugin>
+ #                <groupId>org.springframework.boot</groupId>
+ #                <artifactId>spring-boot-maven-plugin</artifactId>
+ #                <version>2.7.18</version>
+ #                <configuration>
+ #                    <mainClass>com.jxp.FontApplication</mainClass>
+ #                    <layout>JAR</layout>
+ #                </configuration>
+ #                <executions>
+ #                    <execution>
+ #                        <id>repackage</id>
+ #                        <goals>
+ #                            <goal>repackage</goal>
+ #                        </goals>
+ #                    </execution>
+ #                </executions>
+ #            </plugin>
+#
+# 插件必须指定main类
+#
+
 # cd到工作目录，否则为当前sh的目录
 cd ${PROJECT_PATH}
 echo "当前目录: $(pwd)"
 
 # 检测target目录下的JAR包
+# 2>/dev/null：将错误输出重定向到空设备（避免目录不存在时报错
+# head -n 1：取结果中的第一行
 JAR_FILE=$(ls target/*.jar 2>/dev/null | head -n 1)
 FILE_NAME=""
 
@@ -33,11 +56,10 @@ mkdir -p dockerfile
 rm -v dockerfile/Dockerfile
 cat > dockerfile/Dockerfile <<EOF
 FROM openjdk:11-jre-slim
-VOLUME /tmp
 WORKDIR /app
 COPY target/$FILE_NAME app.jar
 EXPOSE 8080
-ENTRYPOINT ["java","-Xms256m","-Xmx512m","-Djava.security.egd=file:/dev/./urandom","-jar","app.jar","--spring.profiles.active=prod","-c"]
+ENTRYPOINT ["java","-Xms256m","-Xmx512m","-Djava.security.egd=file:/dev/./urandom","-jar","app.jar","--spring.profiles.active=prod"]
 EOF
 
 # 3. 构建Docker镜像

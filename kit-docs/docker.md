@@ -30,8 +30,8 @@ RUN set -x; buildDeps='gcc libc6-dev make wget' \
 $ docker build -t nginx:v3 -f path/to/your/Dockerfile .
 .代表上下文路径，而不是指dockerfile所在的目录，这里和cs设计有关。
 $ docker build -t hello-world https://github.com/docker-library/hello-world.git#master:amd64/hello-world
-* -t, --tag <name[:tag]>：为生成的镜像指定名称和可选的标签。例如，myimage:latest。
-* -f, --file <Dockerfile>：指定上下文路径路径。 Dockerfile 要在上下文目录的根目录下。
+* -t, --tag <name[:tag]>：为生成的镜像指定名称和可选的标签。例如，myimage:latest。可同时为同一镜像打多个标签。
+* -f, --file <Dockerfile>：指定上下文路径路径，所有文件会被打包发送给 Docker 守护进程。 Dockerfile 要在上下文目录的根目录下。
 
 # FROM以一个镜像为基础，是必备的指令，并且必须是第一条指令。
 FROM python:3.7-alpine
@@ -46,10 +46,10 @@ RUN <exec>格式：["可执行文件", "参数1", "参数2"]
 shell格式:CMD echo $HOME,实际执行中会被包装为sh -c的形式进行执行，CMD [ "sh", "-c", "echo $HOME" ]。
 CMD ["nginx", "-g", "daemon off;"] 为什么需要daemon off;
 
-前台执行，Docker 不是虚拟机，容器中的应用都应该以前台执行，而不是像虚拟机、物理机里面那样，用 systemd 去启动后台服务，容器内没有后台服务的概念。
-在容器环境中，主进程通常需要在前台运行。如果主进程（在这个例子中是 Nginx）作为守护进程运行并转到后台，Docker 容器会认为主进程已经退出，从而导致容器退出。因此，使用daemon off;可以确保 Nginx 以前台方式运行，并且 Docker 可以正确管理容器的生命周期。
+前台执行，Docker不是虚拟机，容器中的应用都应该以前台执行，而不是像虚拟机、物理机里面那样，用 systemd 去启动后台服务，容器内没有后台服务的概念。
+在容器环境中，主进程通常需要在前台运行。如果主进程（在这个例子中是 Nginx）作为守护进程运行并转到后台，Docker 容器会认为主进程已经退出，从而导致容器退出。因此，使用daemon off;可以确保 Nginx 以前台方式运行，并且 Docker可以正确管理容器的生命周期。
 对于容器而言，其启动程序就是容器应用进程，容器就是为了主进程而存在的，主进程退出，容器就失去了存在的意义，从而退出，其它辅助进程不是它需要关心的东西。
-CMD [ "sh", "-c", "echo $HOME" ]的主进程就变成了sh。命令结束后，sh 也就结束了，sh 作为主进程退出了，自然就会令容器退出。
+CMD [ "sh", "-c", "echo $HOME" ]的主进程就变成了sh。命令结束后，sh 也就结束了，sh作为主进程退出了，自然就会令容器退出。
 
 # WORKDIR 指定工作目录。格式为 WORKDIR <工作目录路径>。
 使用 WORKDIR 指令可以来指定工作目录（或者称为当前目录），以后各层的当前目录就被改为指定的目录，如该目录不存在，WORKDIR 会帮你建立目录。WORKDIR 指令使用的相对路径，那么所切换的路径与之前的 WORKDIR有关。

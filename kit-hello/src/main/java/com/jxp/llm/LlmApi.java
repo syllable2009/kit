@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.seg.common.Term;
@@ -68,5 +69,33 @@ public class LlmApi {
         log.info("短语提取,result:{}", phraseList);
 
         return ResponseEntity.ok(null);
+    }
+
+    @GetMapping(value = "/stream", produces = "text/event-stream;charset=UTF-8")
+    public ResponseBodyEmitter streamLogs() {
+        ResponseBodyEmitter emitter = new ResponseBodyEmitter();
+        // 开启异步线程处理数据并发送
+        new Thread(() -> {
+            try {
+                while (true) {
+                    String logEntry = getLatestLogEntry();
+                    if (logEntry != null) {
+                        emitter.send(logEntry);
+                    }
+                    // 每秒检查一次日志更新
+                    Thread.sleep(1000);
+                }
+            } catch (Exception e) {
+                // 出现异常时结束响应并传递错误信息
+                emitter.completeWithError(e);
+            }
+        }).start();
+
+        return emitter;
+    }
+
+    private String getLatestLogEntry() {
+        // 模拟从日志文件中获取最新日志条目
+        return "2025-02-12 12:00:00 - INFO: User logged in successfully.";
     }
 }

@@ -7,9 +7,9 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>kit-flow</artifactId>
+    <artifactId>kit-font</artifactId>
     <packaging>jar</packaging>
-    <name>kit-flow Maven Webapp</name>
+    <name>kit-font Maven Webapp</name>
     <url>http://maven.apache.org</url>
     <dependencies>
         <dependency>
@@ -51,14 +51,14 @@
         </dependency>
     </dependencies>
     <build>
-        <finalName>kit-flow</finalName>
+        <finalName>kit-font</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.7.18</version>
                 <configuration>
-                    <mainClass>com.jxp.FlowApplication</mainClass>
+                    <mainClass>com.jxp.FontApplication</mainClass>
                     <layout>JAR</layout>
                 </configuration>
                 <executions>
@@ -72,5 +72,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

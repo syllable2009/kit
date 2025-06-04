@@ -2,7 +2,7 @@
 # 参数定义
 IMAGE="nginx:alpine"
 CONTAINER_NAME="ng"
-INSTANCE_COUNT=3
+INSTANCE_COUNT=1
 DATA_DIR="/Users/jiaxiaopeng/docker"
 
 # 创建数据目录，Bash的花括号扩展语法

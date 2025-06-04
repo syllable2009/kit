@@ -104,6 +104,35 @@ docker exec -it es7 bash
 cd /usr/share/elasticsearch/bin
 ./elasticsearch-plugin  install https://release.infinilabs.com/analysis-ik/stable/elasticsearch-analysis-ik-7.12.1.zip
 
+docker pull docker.1ms.run/elastic/elasticsearch:8.18.1
+docker run -d --name es8 \
+--net mynet \
+-p 9200:9200 -p 9300:9300 \
+-e "ES_JAVA_OPTS=-Xms512m -Xmx1g" \
+-e "discovery.type=single-node" \
+-e "xpack.security.enabled=false" \
+-v /Users/jiaxiaopeng/docker/es8/data:/usr/share/elasticsearch/data \
+-v /Users/jiaxiaopeng/docker/es8/plugins:/usr/share/elasticsearch/plugins \
+-v /Users/jiaxiaopeng/docker/es8/config:/usr/share/elasticsearch/config \
+-v /Users/jiaxiaopeng/docker/es8/logs:/usr/share/elasticsearch/logs \
+docker.elastic.co/elasticsearch/elasticsearch:8.18.1
+
+# 下载分词器并赋值到plugins目录执行
+https://release.infinilabs.com/analysis-ik/stable/
+docker exec -it es8 bash
+
+./bin/elasticsearch-plugin install https://release.infinilabs.com/analysis-ik/stable/elasticsearch-analysis-ik-8.18.1.zip
+docker restart es8 
+
+docker pull docker.elastic.co/kibana/kibana:8.18.1
+
+docker run -d \
+--name kibana8 \
+--network mynet \
+-p 5601:5601  \
+-e ELASTICSEARCH_HOSTS=http://es8:9200 \
+docker.elastic.co/kibana/kibana:8.18.1
+
 # meilisearch
 
 docker run -it -d \
@@ -114,7 +143,6 @@ docker run -it -d \
 -e MEILI_MASTER_KEY=R5T5WDon_QrPqhFK97NgGlTVa81iuVlN44TMLiClTTg \
 --name meili \
 getmeili/meilisearch:v1.14
-
 
 # kibana
 docker run -d \
@@ -355,11 +383,29 @@ wiredlush/easy-gate:2.0.3
 # streamdock电视网页直播
 docker run -d --name streamdock --network host --restart unless-stopped ghcr.io/limmer55/streamdock:latest
 
+# torrserver 免下载秒播
+https://github.com/yourok/TorrServer
+docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok/torrserver:latest
+
 
 # Lucky 动态域名+自动证书+反代，傻瓜式设置，非常不错
 https://lucky666.cn/
 https://github.com/gdy666/lucky?tab=readme-ov-file#docker%E4%B8%AD%E4%BD%BF%E7%94%A8
 docker run -d --name lucky --restart=always -p 16601:16601 gdy666/lucky
+
+
+# 开源的无损音乐库playlistdl
+sudo docker run -d \
+--restart unless-stopped \
+--name playlistdl \
+-p 5045:5000 \
+-v /Users/jiaxiaopeng/docker/playlistdl/data:/data \
+-e ADMIN_USERNAME=admin \
+-e ADMIN_PASSWORD=admin234 \
+-e AUDIO_DOWNLOAD_PATH=/data \
+-e CLEANUP_INTERVAL=300 \
+tanner23456/playlistdl:v2
+
 
 
 

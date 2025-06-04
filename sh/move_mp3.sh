@@ -1,10 +1,12 @@
 #!/bin/bash
-set -euo pipefail
-shopt -s dotglob  # 启用隐藏文件匹配
+# set -euo pipefail‌是Bash脚本中常用的一个命令组合，用于提高脚本的健壮性和可靠性，避免常见的错误
 # 严格模式
 # -e: 命令失败立即退出。
-#-u: 使用未定义变量立即退出。
-#-o pipefail: 管道中任何命令失败，整个管道视为失败。
+# -u: 使用未定义变量立即退出。
+# -o pipefail: 管道中任何命令失败，整个管道视为失败。
+set -euo pipefail
+shopt -s dotglob  # 启用隐藏文件匹配
+
 # 参数校验
 if [ $# -ne 2 ]; then
     echo "Usage: $0 <source_dir> <target_dir>"

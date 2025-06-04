@@ -292,7 +292,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.7.18</version>
                 <configuration>
-                    <mainClass>com.jxp.DemoApp</mainClass>
+                    <mainClass>com.jxp.HelloApplication</mainClass>
                     <layout>JAR</layout>
                 </configuration>
                 <executions>
