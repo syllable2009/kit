@@ -6,6 +6,7 @@ import com.jxp.flows.domain.NodeResult;
 import com.jxp.flows.domain.Param;
 import com.jxp.flows.enums.NodeState;
 import com.jxp.flows.service.ExecuteChain;
+import com.jxp.flows.service.flow.ConditionWorkFlow;
 import com.jxp.flows.service.flow.SequentialWorkFlow;
 import com.jxp.flows.service.node.EndNode;
 import com.jxp.flows.service.node.StartNode;
@@ -13,6 +14,7 @@ import com.jxp.flows.service.node.StartNode;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 工作流的拆解与复用
  * @author jiaxiaopeng
  * Created on 2025-05-28 10:56
  */
@@ -38,5 +40,15 @@ public class MainTest {
         final NodeResult execute = workflow.execute(FlowContext.builder().build());
         final NodeState state = execute.getState();
         final FlowContext workContext = execute.getNodeContext();
+
+
+        ConditionWorkFlow.builder().when((r) -> {
+                    System.out.println("");
+                    return false;
+                }, null).when((r) -> {
+                    System.out.println("");
+                    return false;
+                }, null).otherwise(null).build()
+                .execute(FlowContext.builder().build());
     }
 }

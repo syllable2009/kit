@@ -1,4 +1,4 @@
-package com.jxp.flows.service;
+package com.jxp.flows.infs;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +14,6 @@ import com.jxp.flows.enums.NodeTypeEnum;
  * Created on 2025-06-04 14:23
  */
 public interface INode {
-
 
     String getNodeId();
 

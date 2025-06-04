@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.jxp.flows.service.INode;
+import com.jxp.flows.infs.INode;
 
 import cn.hutool.json.JSONUtil;
 import lombok.Data;

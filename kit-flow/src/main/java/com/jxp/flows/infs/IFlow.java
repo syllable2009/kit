@@ -1,4 +1,4 @@
-package com.jxp.flows.service;
+package com.jxp.flows.infs;
 
 /**
  * @author jiaxiaopeng

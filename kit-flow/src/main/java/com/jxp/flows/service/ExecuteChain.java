@@ -3,6 +3,7 @@ package com.jxp.flows.service;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.jxp.flows.infs.INode;
 import com.jxp.flows.service.flow.SequentialWorkFlow;
 
 /**

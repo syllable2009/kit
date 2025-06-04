@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.jxp.flows.domain.Param;
 import com.jxp.flows.enums.NodeTypeEnum;
+import com.jxp.flows.infs.INode;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,6 +1,10 @@
 package com.jxp.flows.service.flow;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import org.springframework.util.CollectionUtils;
 
@@ -8,8 +12,8 @@ import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.NodeResult;
 import com.jxp.flows.enums.NodeState;
 import com.jxp.flows.enums.NodeTypeEnum;
-import com.jxp.flows.infs.INode;
 import com.jxp.flows.service.AbstractNodeFlow;
+import com.jxp.flows.infs.INode;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,6 +22,7 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 并行
  * @author jiaxiaopeng
  * Created on 2025-06-04 14:32
  */
@@ -27,7 +32,12 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 @SuperBuilder
 @Slf4j
-public class SequentialWorkFlow extends AbstractNodeFlow {
+public class ParallelWorkFlow extends AbstractNodeFlow {
+
+    // 使用自定义线程池（避免占用公共ForkJoinPool）
+    private static ExecutorService executor = Executors.newFixedThreadPool(
+            Math.min(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors() * 2)
+    );
 
     // node或者workflow
     private List<INode> nodes;
@@ -44,7 +54,7 @@ public class SequentialWorkFlow extends AbstractNodeFlow {
 
     @Override
     public String getNodeId() {
-        return "SequentialWorkFlow";
+        return "ParallelWorkFlow";
     }
 
     @Override
@@ -53,9 +63,14 @@ public class SequentialWorkFlow extends AbstractNodeFlow {
         if (CollectionUtils.isEmpty(nodes)) {
             return NodeResult.fail(flowContext, "no node exec");
         }
-        // 顺序执行
-        for (INode node : nodes) {
-            final NodeResult execute = node.execute(flowContext);
+        // 并行执行
+        final List<NodeResult> result = nodes.stream()
+                .map(e -> CompletableFuture.supplyAsync(
+                        () -> e.execute(flowContext), executor))
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList());
+        // 判断执行结果
+        for (NodeResult execute : result) {
             if (null == execute) {
                 return NodeResult.fail(flowContext, "node result is null");
             }
