@@ -2,7 +2,6 @@ package com.jxp.flows.infs;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.NodeResult;
@@ -20,10 +19,6 @@ public interface INode {
     String getName();
 
     void setNodeResult(NodeResult nodeResult);
-
-    default String getRunId() {
-        return UUID.randomUUID().toString();
-    }
 
     boolean execute(FlowContext context);
 

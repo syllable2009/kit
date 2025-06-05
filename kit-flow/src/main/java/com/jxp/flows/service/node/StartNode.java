@@ -1,11 +1,12 @@
 package com.jxp.flows.service.node;
 
-import java.util.UUID;
+import org.apache.commons.lang3.BooleanUtils;
 
 import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.NodeResult;
 import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.service.AbstractNode;
+import com.jxp.flows.service.FlowUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,19 +26,22 @@ public class StartNode extends AbstractNode {
     @Override
     public boolean execute(FlowContext context) {
         if (null == context) {
+            this.setNodeResult(NodeResult.fail("context is null"));
             context.putExecuteNode(this.getNodeId(), this);
-            this.setNodeResult(NodeResult.fail(context, "context is null"));
             return false;
-//            return NodeResult.fail(context, "context is null");
         }
-        context.setRunId(UUID.randomUUID().toString());
         // 参数校验
+        final boolean validResult = FlowUtils.validInputParam(this, context);
+        if (BooleanUtils.isNotTrue(validResult)) {
+            this.setNodeResult(NodeResult.fail("validInputParam failed"));
+            context.putExecuteNode(this.getNodeId(), this);
+            return false;
+        }
 //        final List<Param> input = this.getInput();
 //        final List<Param> input1 = context.getInput();
 //        // 执行，构造返回,特别的开始节点的返回为：全局用户入参
-//        this.setOutput(input);
-//        context.putExecuteNode(this.getNodeId(), this);
-//        return NodeResult.success(context);
+        this.setNodeResult(NodeResult.success(context.getInput()));
+        context.putExecuteNode(this.getNodeId(), this);
         return true;
     }
 

@@ -35,4 +35,6 @@ public abstract class AbstractNode implements INode {
         this.node = node;
         return this;
     }
+
+    public abstract String getNodeId();
 }

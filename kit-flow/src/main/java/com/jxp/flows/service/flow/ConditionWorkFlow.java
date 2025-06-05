@@ -2,6 +2,7 @@ package com.jxp.flows.service.flow;
 
 import java.util.List;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.util.CollectionUtils;
 
 import com.google.common.collect.Lists;
@@ -11,6 +12,7 @@ import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.infs.INode;
 import com.jxp.flows.infs.IPredicate;
 import com.jxp.flows.service.AbstractNodeFlow;
+import com.jxp.flows.service.FlowUtils;
 
 import cn.hutool.core.lang.Pair;
 import lombok.AllArgsConstructor;
@@ -43,24 +45,26 @@ public class ConditionWorkFlow extends AbstractNodeFlow {
     public boolean execute(FlowContext flowContext) {
         final List<Pair<IPredicate, INode>> nodes = this.getConditions();
         if (CollectionUtils.isEmpty(nodes)) {
-            this.setNodeResult(NodeResult.fail(flowContext, "no node exec"));
+            this.setNodeResult(NodeResult.fail("no node exec"));
+            flowContext.putExecuteNode(this.getNodeId(), this);
             return false;
         }
-        // 判断条件
+        boolean condition = false;
+        // 判断条件,条件也是node
         for (Pair<IPredicate, INode> pair : nodes) {
-            if (pair.getKey().apply(null)) {
-                final boolean execute = pair.getValue().execute(flowContext);
-                if (execute) {
-                    // 保存结果
-                    flowContext.putExecuteNode(pair.getValue().getNodeId(), pair.getValue());
-                    this.setNodeResult(NodeResult.success(flowContext, null));
-                    return true;
-                } else {
-                    this.setNodeResult(NodeResult.fail(flowContext, "exec failed"));
-                    return false;
-                }
+            if (pair.getKey().apply(pair.getValue(), flowContext)) {
+                condition = true;
+                return FlowUtils.execNode(pair.getValue(), flowContext);
             }
         }
+
+        // 没有进入条件
+        if (BooleanUtils.isFalse(condition) && null != otherwise) {
+            return FlowUtils.execNode(otherwise, flowContext);
+        }
+
+        this.setNodeResult(NodeResult.fail("no condition exec"));
+        flowContext.putExecuteNode(this.getNodeId(), this);
         return false;
 //        for (INode node : nodes) {
 //            final NodeResult execute = node.execute(flowContext);
@@ -76,7 +80,7 @@ public class ConditionWorkFlow extends AbstractNodeFlow {
 
     @Override
     public NodeTypeEnum getNodeType() {
-        return NodeTypeEnum.flow;
+        return NodeTypeEnum.conditonFlow;
     }
 
     public static ConditionWorkFlow builder() {

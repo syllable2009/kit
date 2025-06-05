@@ -78,6 +78,6 @@ public class ParallelWorkFlow extends AbstractNodeFlow {
 
     @Override
     public NodeTypeEnum getNodeType() {
-        return NodeTypeEnum.flow;
+        return NodeTypeEnum.parallelFlow;
     }
 }

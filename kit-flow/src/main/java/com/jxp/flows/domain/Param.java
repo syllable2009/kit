@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Param {
-    // 变量类型:上级节点previousNodeVariable，系统变量systemVariable，自定义变量customVariable
-    private String categroy;
+    // 变量类型:userInput用户输入,node节点previousNodeVariable，系统变量systemVariable，自定义变量customVariable
+    private String category;
     // 变量名称
     private String name;
     // 变量值

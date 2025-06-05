@@ -3,10 +3,9 @@ package com.jxp.flows;
 import com.google.common.collect.Lists;
 import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.Param;
-import com.jxp.flows.service.ExecuteChain;
-import com.jxp.flows.service.flow.ConditionWorkFlow;
 import com.jxp.flows.service.flow.SequentialWorkFlow;
 import com.jxp.flows.service.node.EndNode;
+import com.jxp.flows.service.node.LLMNode;
 import com.jxp.flows.service.node.StartNode;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,23 +29,38 @@ public class MainTest {
                 .build())).build();
         final EndNode end = EndNode.builder().build();
 
-        // 现需要一个chain把他们串起来
-        final SequentialWorkFlow workflow = ExecuteChain.builder().then(start).then(end).then(end)
-                .build();
-
+        final LLMNode llmNode = LLMNode.builder().build();
 
 //        final NodeResult execute = workflow.execute(FlowContext.builder().build());
 //        final NodeState state = execute.getState();
 //        final FlowContext workContext = execute.getNodeContext();
 
+        // 构建流程上下文对象
+        final FlowContext context = FlowContext.builder()
+                .build();
 
-        ConditionWorkFlow.builder().when((r) -> {
-                    System.out.println("1");
-                    return false;
-                }, null).when((r) -> {
-                    System.out.println("2");
-                    return false;
-                }, null).otherwise(null).build()
-                .execute(FlowContext.builder().build());
+        // 顺序执行块
+        // 现需要一个chain把他们串起来
+        final boolean execute = SequentialWorkFlow.builder()
+                .then(start)
+                .then(llmNode)
+                .then(end)
+                .build()
+                .execute(context);
+
+        log.info("execute:{},context:{}", execute, context);
+
+//        final SequentialWorkFlow workflow = ExecuteChain.builder().then(start).then(end).then(end)
+//                .build();
+
+//
+//        ConditionWorkFlow.builder().when((r, v) -> {
+//                    System.out.println("1");
+//                    return false;
+//                }, null).when((r, v) -> {
+//                    System.out.println("2");
+//                    return false;
+//                }, null).otherwise(null).build()
+//                .execute(context);
     }
 }

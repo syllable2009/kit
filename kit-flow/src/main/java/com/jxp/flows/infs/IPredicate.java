@@ -2,6 +2,8 @@ package com.jxp.flows.infs;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.jxp.flows.domain.FlowContext;
+
 /**
  * @author jiaxiaopeng
  * Created on 2025-06-04 20:49
@@ -10,10 +12,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public interface IPredicate {
 
     // 条件语句也封装成INode
-    boolean apply(INode iNode);
+    boolean apply(INode iNode, FlowContext context);
 
-    IPredicate ALWAYS_TRUE = result -> true;
-    IPredicate ALWAYS_FALSE = result -> false;
+    IPredicate ALWAYS_TRUE = (k, v) -> true;
+    IPredicate ALWAYS_FALSE = (k, v) -> false;
 //    IPredicate COMPLETED = result -> result.getState().equals(NodeState.COMPLETED);
 //    IPredicate FAILED = result -> result.getState().equals(NodeState.FAILED);
 
@@ -29,7 +31,7 @@ public interface IPredicate {
         }
 
         @Override
-        public boolean apply(INode inode) {
+        public boolean apply(INode inode, FlowContext context) {
             return counter.incrementAndGet() != times;
         }
 

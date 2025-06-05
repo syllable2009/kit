@@ -22,7 +22,6 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public abstract class AbstractNodeFlow implements IFlow {
     private String name;
-    private String runId;
     private NodeTypeEnum type;
 
     private List<Param> input;

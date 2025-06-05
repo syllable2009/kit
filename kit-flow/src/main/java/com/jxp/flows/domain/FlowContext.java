@@ -1,9 +1,14 @@
 package com.jxp.flows.domain;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.jxp.flows.infs.INode;
 
@@ -25,7 +30,7 @@ public class FlowContext {
     private List<Param> input;
     // 最终结果
     private List<Param> output;
-
+    // 运行id
     private String runId;
 
     public void putGlobalParam(String key, Param value) {
@@ -49,15 +54,25 @@ public class FlowContext {
     }
 
     public static FlowContext builder() {
-        final FlowContext context = new FlowContext();
-        context.setGlobalMap(new ConcurrentHashMap());
-        context.setExecuteMap(new ConcurrentHashMap());
-        context.setInput(Collections.EMPTY_LIST);
-        context.setOutput(Collections.EMPTY_LIST);
-        return context;
+        return new FlowContext();
     }
 
     public FlowContext build() {
+        if (null == this.getGlobalMap()) {
+            this.setGlobalMap(new ConcurrentHashMap());
+        }
+        if (null == this.getExecuteMap()) {
+            this.setExecuteMap(new LinkedHashMap<>());
+        }
+        if (null == this.getInput()) {
+            this.setInput(Collections.EMPTY_LIST);
+        }
+        if (null == this.getOutput()) {
+            this.setOutput(Collections.EMPTY_LIST);
+        }
+        if (StringUtils.isBlank(this.getRunId())) {
+            this.setRunId(UUID.randomUUID().toString());
+        }
         return this;
     }
 

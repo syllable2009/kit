@@ -28,7 +28,9 @@ public enum NodeTypeEnum {
     setVariable("setVariable", "设置变量"),
     http("http", "http请求"),
     largeModel("largeModel", "大模型"),
-    flow("flow", "流程编排"),
+    conditonFlow("conditonFlow", "条件流程编排"),
+    parallelFlow("parallelFlow", "并行流程编排"),
+    sequentialFlow("sequentialFlow", "顺序流程编排"),
     ;
 
     private String code;

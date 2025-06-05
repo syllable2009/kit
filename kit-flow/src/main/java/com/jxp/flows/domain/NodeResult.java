@@ -1,6 +1,7 @@
 package com.jxp.flows.domain;
 
 
+import java.util.Collections;
 import java.util.List;
 
 import com.jxp.flows.enums.NodeState;
@@ -29,23 +30,29 @@ public class NodeResult {
 
     private String message;
 
-    private FlowContext nodeContext;
+//    private FlowContext nodeContext;
 
     private List<Param> output;
 
-    public static NodeResult fail(FlowContext nodeContext, String message) {
+    public static NodeResult fail(String message) {
         return NodeResult.builder()
                 .state(NodeState.FAILED)
-                .nodeContext(nodeContext)
+                .output(Collections.EMPTY_LIST)
                 .message(message)
                 .build();
     }
 
-    public static NodeResult success(FlowContext nodeContext, List<Param> output) {
+    public static NodeResult success(List<Param> output) {
         return NodeResult.builder()
-                .nodeContext(nodeContext)
                 .state(NodeState.COMPLETED)
                 .output(output)
+                .build();
+    }
+
+    public static NodeResult success() {
+        return NodeResult.builder()
+                .state(NodeState.COMPLETED)
+                .output(Collections.EMPTY_LIST)
                 .build();
     }
 }
