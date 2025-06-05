@@ -84,6 +84,13 @@ FLUSH PRIVILEGES;  -- 刷新权限
 
 CREATE DATABASE erupt CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+# CloudBeaver 是一个基于Web的数据库管理工具
+docker run -d \
+--name cloudbeaver \
+-p 8978:8978 \
+dbeaver/cloudbeaver:latest
+
+
 # elasticsearch
 docker run -d \
 --name es7 \
@@ -213,6 +220,13 @@ Stash 库目录
 /root/.stash/stash-go.sqlite
 二进制数据目录
 /root/.stash/blobs
+
+# 削刮海报的神器--metatube
+
+docker pull ghcr.io/metatube-community/metatube-server:latest
+数据库模式(推荐)：
+docker run -d -p 8080:8080 -v $PWD/config:/config --name metatube ghcr.io/metatube-community/metatube-server:latest -dsn /config/metatube.db
+
 
 # Erupt
 https://www.erupt.xyz/#!/doc
@@ -378,6 +392,20 @@ docker run -d --name=easy-gate \
 -v /Users/jiaxiaopeng/docker/gate/easy-gate.json:/etc/easy-gate/easy-gate.json \
 --restart unless-stopped \
 wiredlush/easy-gate:2.0.3
+
+# Homer 是一个简单而强大的个人主页生成器，适合用来展示你的各种服务和链接。
+docker run -d \
+--name homer \
+-p 8080:8080 \
+-v ${PWD}/assets:/www/assets \
+b4bz/homer:latest
+
+# Filebrowser：在线文件管理器
+docker run -d \
+--name filebrowser \
+-v $PWD/filebrowser:/srv \
+-p 80:80 \
+filebrowser/filebrowser
 
 
 # streamdock电视网页直播
