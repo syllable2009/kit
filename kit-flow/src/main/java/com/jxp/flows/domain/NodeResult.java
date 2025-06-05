@@ -1,8 +1,8 @@
 package com.jxp.flows.domain;
 
 
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.jxp.flows.enums.NodeState;
 
@@ -32,17 +32,19 @@ public class NodeResult {
 
 //    private FlowContext nodeContext;
 
-    private List<Param> output;
+//    private List<Param> output;
+
+    private Map<String, Param> output;
 
     public static NodeResult fail(String message) {
         return NodeResult.builder()
                 .state(NodeState.FAILED)
-                .output(Collections.EMPTY_LIST)
+                .output(new HashMap<>())
                 .message(message)
                 .build();
     }
 
-    public static NodeResult success(List<Param> output) {
+    public static NodeResult success(Map<String, Param> output) {
         return NodeResult.builder()
                 .state(NodeState.COMPLETED)
                 .output(output)
@@ -52,7 +54,7 @@ public class NodeResult {
     public static NodeResult success() {
         return NodeResult.builder()
                 .state(NodeState.COMPLETED)
-                .output(Collections.EMPTY_LIST)
+                .output(new HashMap<>())
                 .build();
     }
 }

@@ -26,9 +26,10 @@ public abstract class AbstractNode implements INode {
     private NodeTypeEnum type;
     // node
     private INode node;
-
+    // 配置的入参
     private List<Param> input;
-
+    // 配置的出参
+    private List<Param> output;
     private NodeResult nodeResult;
 
     public INode set(INode node) {

@@ -1,8 +1,15 @@
 package com.jxp.flows.service.node;
 
+import java.util.List;
+
+import org.springframework.util.CollectionUtils;
+
 import com.jxp.flows.domain.FlowContext;
+import com.jxp.flows.domain.NodeResult;
+import com.jxp.flows.domain.Param;
 import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.service.AbstractNode;
+import com.jxp.flows.service.FlowUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,6 +37,15 @@ public class EndNode extends AbstractNode {
 //        this.setOutput(null);
 //        context.putExecuteNode(this.getNodeId(), this);
 //        return NodeResult.success(context);
+        // 获取配置的出参
+        final List<Param> output = this.getOutput();
+        this.setNodeResult(NodeResult.success());
+        context.putExecuteNode(this.getNodeId(), this);
+        // 设置整体返回
+        if (!CollectionUtils.isEmpty(output)) {
+            context.setOutput(FlowUtils.paramConvert(output, context));
+        }
+
         return true;
     }
 

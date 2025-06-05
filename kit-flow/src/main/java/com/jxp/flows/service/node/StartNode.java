@@ -37,9 +37,7 @@ public class StartNode extends AbstractNode {
             context.putExecuteNode(this.getNodeId(), this);
             return false;
         }
-//        final List<Param> input = this.getInput();
-//        final List<Param> input1 = context.getInput();
-//        // 执行，构造返回,特别的开始节点的返回为：全局用户入参
+        // 执行，构造返回,特别的开始节点的返回为：全局用户入参
         this.setNodeResult(NodeResult.success(context.getInput()));
         context.putExecuteNode(this.getNodeId(), this);
         return true;

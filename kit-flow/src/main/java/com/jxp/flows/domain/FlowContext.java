@@ -1,10 +1,10 @@
 package com.jxp.flows.domain;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,7 +27,7 @@ public class FlowContext {
     // 节点执行结果参数
     private Map<String, INode> executeMap;
     // 初始入参
-    private List<Param> input;
+    private Map<String, Param> input;
     // 最终结果
     private List<Param> output;
     // 运行id
@@ -65,7 +65,7 @@ public class FlowContext {
             this.setExecuteMap(new LinkedHashMap<>());
         }
         if (null == this.getInput()) {
-            this.setInput(Collections.EMPTY_LIST);
+            this.setInput(new HashMap<>());
         }
         if (null == this.getOutput()) {
             this.setOutput(Collections.EMPTY_LIST);
