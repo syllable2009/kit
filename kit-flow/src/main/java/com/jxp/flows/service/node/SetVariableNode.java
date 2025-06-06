@@ -32,7 +32,7 @@ public class SetVariableNode extends AbstractNode {
     public boolean execute(FlowContext context) {
         log.info("设置变量节点");
         final List<Param> input = this.getInput();
-        final List<Param> params = FlowUtils.paramConvert(input, context);
+        final List<Param> params = FlowUtils.paramConvertList(input, context);
         final Map<String, Param> paramMap = params.stream().collect(Collectors.toMap(Param::getName,
                 Function.identity(), (k1, k2) -> k2));
         context.getGlobalMap().putAll(paramMap);

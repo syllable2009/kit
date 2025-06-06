@@ -2,6 +2,8 @@ package com.jxp.flows.service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.BooleanUtils;
@@ -53,7 +55,7 @@ public class FlowUtils {
     }
 
 
-    public static List<Param> paramConvert(List<Param> input, FlowContext context) {
+    public static List<Param> paramConvertList(List<Param> input, FlowContext context) {
         if (CollectionUtils.isEmpty(input)) {
             return Collections.EMPTY_LIST;
         }
@@ -73,5 +75,11 @@ public class FlowUtils {
                             }
                         }
                 ).collect(Collectors.toList());
+    }
+
+    public static Map<String, Param> paramConvertMap(List<Param> input, FlowContext context) {
+        return paramConvertList(input, context)
+                .stream()
+                .collect(Collectors.toMap(Param::getName, Function.identity(), (k1, k2) -> k2));
     }
 }

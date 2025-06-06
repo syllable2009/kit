@@ -44,7 +44,7 @@ public class EndNode extends AbstractNode {
         context.putExecuteNode(this.getNodeId(), this);
         // 设置整体返回
         if (!CollectionUtils.isEmpty(output)) {
-            context.setOutput(FlowUtils.paramConvert(output, context));
+            context.setOutput(FlowUtils.paramConvertList(output, context));
         }
 
         return true;
