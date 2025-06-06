@@ -11,7 +11,6 @@ import com.jxp.flows.domain.NodeResult;
 import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.infs.INode;
 import com.jxp.flows.service.AbstractNodeFlow;
-import com.jxp.flows.service.FlowUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -68,19 +67,20 @@ public class SequentialWorkFlow extends AbstractNodeFlow {
         final List<INode> nodes = this.getNodes();
         if (CollectionUtils.isEmpty(nodes)) {
             this.setNodeResult(NodeResult.fail("no node exec"));
+            flowContext.putExecuteNode(this.getNodeId(), this);
             return false;
         }
         // 顺序执行
         for (INode node : nodes) {
-            final boolean execute = FlowUtils.execNode(node, flowContext);
-            if (execute) {
-                node.setNodeResult(NodeResult.success());
-                flowContext.putExecuteNode(node.getNodeId(), node);
-            } else {
-                node.setNodeResult(NodeResult.fail("node result is null"));
+            final boolean execute = node.execute(flowContext);
+            if (!execute) {
+                this.setNodeResult(NodeResult.fail("flow exec fail"));
+                flowContext.putExecuteNode(this.getNodeId(), this);
                 return false;
             }
         }
+        this.setNodeResult(NodeResult.success());
+        flowContext.putExecuteNode(this.getNodeId(), this);
         return true;
     }
 

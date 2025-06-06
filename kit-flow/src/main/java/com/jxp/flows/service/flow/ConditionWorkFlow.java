@@ -12,7 +12,6 @@ import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.infs.INode;
 import com.jxp.flows.infs.IPredicate;
 import com.jxp.flows.service.AbstractNodeFlow;
-import com.jxp.flows.service.FlowUtils;
 
 import cn.hutool.core.lang.Pair;
 import lombok.AllArgsConstructor;
@@ -49,33 +48,38 @@ public class ConditionWorkFlow extends AbstractNodeFlow {
             flowContext.putExecuteNode(this.getNodeId(), this);
             return false;
         }
-        boolean condition = false;
+        boolean conditionMatch = false;
+        boolean execResult = false;
         // 判断条件,条件也是node
         for (Pair<IPredicate, INode> pair : nodes) {
             if (pair.getKey().apply(pair.getValue(), flowContext)) {
-                condition = true;
-                return FlowUtils.execNode(pair.getValue(), flowContext);
+                conditionMatch = true;
+                execResult = pair.getValue().execute(flowContext);
+                if (execResult) {
+                    this.setNodeResult(NodeResult.success());
+                } else {
+                    this.setNodeResult(NodeResult.fail("exec failed"));
+                }
+                break;
             }
         }
 
         // 没有进入条件
-        if (BooleanUtils.isFalse(condition) && null != otherwise) {
-            return FlowUtils.execNode(otherwise, flowContext);
+        if (BooleanUtils.isFalse(conditionMatch)) {
+            if (null == otherwise) {
+                this.setNodeResult(NodeResult.fail("otherwise is null"));
+            } else {
+                execResult = otherwise.execute(flowContext);
+                if (execResult) {
+                    this.setNodeResult(NodeResult.success());
+                } else {
+                    this.setNodeResult(NodeResult.fail("exec failed"));
+                }
+            }
         }
 
-        this.setNodeResult(NodeResult.fail("no condition exec"));
         flowContext.putExecuteNode(this.getNodeId(), this);
-        return false;
-//        for (INode node : nodes) {
-//            final NodeResult execute = node.execute(flowContext);
-//            if (null == execute) {
-//                return NodeResult.fail(flowContext, "node result is null");
-//            }
-//            if (NodeState.FAILED == execute.getState()) {
-//                return NodeResult.fail(flowContext, "node state is failed");
-//            }
-//        }
-//        return NodeResult.builder().state(NodeState.COMPLETED).nodeContext(flowContext).build();
+        return execResult;
     }
 
     @Override

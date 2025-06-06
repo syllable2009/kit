@@ -13,6 +13,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
+ * flow不会有返回值，组合的flow会共用一个context
+ * node必须有返回值和执行痕迹，flow也有
  * @author jiaxiaopeng
  * Created on 2025-06-04 14:30
  */

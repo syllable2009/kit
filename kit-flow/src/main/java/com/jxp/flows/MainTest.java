@@ -3,7 +3,7 @@ package com.jxp.flows;
 import com.google.common.collect.Lists;
 import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.Param;
-import com.jxp.flows.service.flow.SequentialWorkFlow;
+import com.jxp.flows.service.flow.ParallelWorkFlow;
 import com.jxp.flows.service.node.EndNode;
 import com.jxp.flows.service.node.LLMNode;
 import com.jxp.flows.service.node.StartNode;
@@ -41,10 +41,15 @@ public class MainTest {
 
         // 顺序执行块
         // 现需要一个chain把他们串起来
-        final boolean execute = SequentialWorkFlow.builder()
-                .then(start)
-                .then(llmNode)
-                .then(end)
+//        final boolean execute = SequentialWorkFlow.builder()
+//                .then(start)
+//                .then(llmNode)
+//                .then(end)
+//                .build()
+//                .execute(context);
+
+        final boolean execute = ParallelWorkFlow.builder()
+                .add(Lists.newArrayList(start, llmNode, end))
                 .build()
                 .execute(context);
 

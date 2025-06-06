@@ -25,6 +25,7 @@ public class StartNode extends AbstractNode {
 
     @Override
     public boolean execute(FlowContext context) {
+        log.info("开始节点");
         if (null == context) {
             this.setNodeResult(NodeResult.fail("context is null"));
             context.putExecuteNode(this.getNodeId(), this);

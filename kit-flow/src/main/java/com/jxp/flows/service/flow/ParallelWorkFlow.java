@@ -1,10 +1,17 @@
 package com.jxp.flows.service.flow;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
+import org.springframework.util.CollectionUtils;
+
+import com.google.common.collect.Lists;
 import com.jxp.flows.domain.FlowContext;
+import com.jxp.flows.domain.NodeResult;
 import com.jxp.flows.enums.NodeTypeEnum;
 import com.jxp.flows.infs.INode;
 import com.jxp.flows.service.AbstractNodeFlow;
@@ -36,12 +43,26 @@ public class ParallelWorkFlow extends AbstractNodeFlow {
     // node或者workflow
     private List<INode> nodes;
 
-    public INode add(INode node) {
+
+    public static ParallelWorkFlow builder() {
+        final ParallelWorkFlow workFlow = new ParallelWorkFlow();
+        workFlow.setNodes(Lists.newArrayList());
+        return workFlow;
+    }
+
+    public ParallelWorkFlow build() {
+        if (null == this.getInput()) {
+            this.setInput(Collections.EMPTY_LIST);
+        }
+        return this;
+    }
+
+    public ParallelWorkFlow add(INode node) {
         this.nodes.add(node);
         return this;
     }
 
-    public INode add(List<INode> nodes) {
+    public ParallelWorkFlow add(List<INode> nodes) {
         this.nodes.addAll(nodes);
         return this;
     }
@@ -53,26 +74,21 @@ public class ParallelWorkFlow extends AbstractNodeFlow {
 
     @Override
     public boolean execute(FlowContext flowContext) {
-//        final List<INode> nodes = this.getNodes();
-//        if (CollectionUtils.isEmpty(nodes)) {
-//            return NodeResult.fail(flowContext, "no node exec");
-//        }
-//        // 并行执行
-//        final List<NodeResult> result = nodes.stream()
-//                .map(e -> CompletableFuture.supplyAsync(
-//                        () -> e.execute(flowContext), executor))
-//                .map(CompletableFuture::join)
-//                .collect(Collectors.toList());
-//        // 判断执行结果
-//        for (NodeResult execute : result) {
-//            if (null == execute) {
-//                return NodeResult.fail(flowContext, "node result is null");
-//            }
-//            if (NodeState.FAILED == execute.getState()) {
-//                return NodeResult.fail(flowContext, "node state is failed");
-//            }
-//        }
-//        return NodeResult.builder().state(NodeState.COMPLETED).nodeContext(flowContext).build();
+        final List<INode> nodes = this.getNodes();
+        if (CollectionUtils.isEmpty(nodes)) {
+            this.setNodeResult(NodeResult.fail("no node exec"));
+            flowContext.getExecuteMap().put(this.getNodeId(), this);
+            return false;
+        }
+        // 并行执行
+        final List<Boolean> results = nodes.stream()
+                .map(e -> CompletableFuture.supplyAsync(
+                        () -> e.execute(flowContext), executor))
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList());
+        // 判断执行结果
+        this.setNodeResult(NodeResult.success());
+        flowContext.putExecuteNode(this.getNodeId(), this);
         return true;
     }
 

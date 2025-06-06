@@ -28,6 +28,7 @@ public class EndNode extends AbstractNode {
 
     @Override
     public boolean execute(FlowContext context) {
+        log.info("结束节点");
         // 获取配置的返回
 //        final List<Param> output = this.getOutput();
 //        if (CollectionUtils.isEmpty(output)) {
