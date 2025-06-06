@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -53,8 +55,21 @@ public class FlowContext {
         return JSONUtil.toJsonStr(this);
     }
 
+    public FlowContext input(Param param) {
+        this.getInput().put(param.getName(), param);
+        return this;
+    }
+
+    public FlowContext input(List<Param> params) {
+        final Map<String, Param> paramMap = params.stream().collect(Collectors.toMap(Param::getName, Function.identity(), (k1, k2) -> k2));
+        this.getInput().putAll(paramMap);
+        return this;
+    }
+
     public static FlowContext builder() {
-        return new FlowContext();
+        final FlowContext context = new FlowContext();
+        context.setInput(new HashMap<>());
+        return context;
     }
 
     public FlowContext build() {

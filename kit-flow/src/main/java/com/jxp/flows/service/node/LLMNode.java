@@ -28,7 +28,6 @@ public class LLMNode extends AbstractNode {
     private String model;
     private String promot; // list-object
     private Map<String, String> config;
-    private List<Param> output;
 
     @Override
     public boolean execute(FlowContext context) {

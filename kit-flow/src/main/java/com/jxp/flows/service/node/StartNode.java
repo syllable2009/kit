@@ -53,4 +53,9 @@ public class StartNode extends AbstractNode {
     public String getNodeId() {
         return "start";
     }
+
+    @Override
+    public String getName() {
+        return "开始";
+    }
 }

@@ -7,21 +7,24 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.Param;
 import com.jxp.flows.enums.NodeTypeEnum;
+import com.jxp.flows.enums.ParamCategory;
 import com.jxp.flows.infs.INode;
 import com.jxp.flows.service.flow.ConditionWorkFlow;
 import com.jxp.flows.service.flow.ParallelWorkFlow;
 import com.jxp.flows.service.flow.SequentialWorkFlow;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author jiaxiaopeng
  * Created on 2025-06-05 11:39
  */
+@Slf4j
 public class FlowUtils {
 
 
@@ -42,15 +45,26 @@ public class FlowUtils {
         }
     }
 
-    // 校验参数，true代表验证通过
+    // 校验参数,有一个为空立即报错返回，true代表验证通过
     public static boolean validInputParam(INode node, FlowContext context) {
         // 节点的需求参数
         final List<Param> input = node.getInput();
-        input.stream()
+        final boolean present = input.stream()
                 .filter(e -> BooleanUtils.isTrue(e.getRequired()))
-                .forEach(e -> {
-                    final String category = e.getCategory();
-                });
+                .filter(e -> {
+                    final Param param = context.getInput().get(e.getName());
+                    final boolean b = null == param;
+                    if (b) {
+                        log.error("validInputParam error, nodeId:{}:{}, param:{} is null", node.getNodeId(),
+                                node.getName(), e.getName());
+                    }
+                    return b;
+                })
+                .findFirst()
+                .isPresent();
+        if (present) {
+            return false;
+        }
         return true;
     }
 
@@ -61,14 +75,14 @@ public class FlowUtils {
         }
         return input.stream()
                 .map(e -> {
-                            final String category = e.getCategory();
-                            if (StringUtils.equals("userInput", category)) {
+                            final ParamCategory category = e.getCategory();
+                            if (ParamCategory.userInput.equals(category)) {
                                 return context.getInput().get(e.getName());
-                            } else if (StringUtils.equals("nodeVariable", category)) {
+                            } else if (ParamCategory.nodeVariable.equals(category)) {
                                 return context.getExecuteMap().get(e.getName()).getResult().getOutput().get(e.getName());
-                            } else if (StringUtils.equals("systemVariable", category)) {
+                            } else if (ParamCategory.systemVariable.equals(category)) {
                                 return context.getGlobalMap().get(e.getName());
-                            } else if (StringUtils.equals("customVariable", category)) {
+                            } else if (ParamCategory.customVariable.equals(category)) {
                                 return context.getGlobalMap().get(e.getName());
                             } else {
                                 return null;

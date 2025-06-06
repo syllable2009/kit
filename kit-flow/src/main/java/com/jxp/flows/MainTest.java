@@ -3,7 +3,9 @@ package com.jxp.flows;
 import com.google.common.collect.Lists;
 import com.jxp.flows.domain.FlowContext;
 import com.jxp.flows.domain.Param;
-import com.jxp.flows.service.flow.ParallelWorkFlow;
+import com.jxp.flows.enums.ParamCategory;
+import com.jxp.flows.enums.ParamType;
+import com.jxp.flows.service.flow.SequentialWorkFlow;
 import com.jxp.flows.service.node.EndNode;
 import com.jxp.flows.service.node.LLMNode;
 import com.jxp.flows.service.node.StartNode;
@@ -26,6 +28,9 @@ public class MainTest {
 //        flow1.execute();
         final StartNode start = StartNode.builder().input(Lists.newArrayList(Param.builder()
                 .name("userInput")
+                .category(ParamCategory.userInput)
+                .type(ParamType.str)
+                .required(true)
                 .build())).build();
         final EndNode end = EndNode.builder().build();
 
@@ -37,21 +42,22 @@ public class MainTest {
 
         // 构建流程上下文对象
         final FlowContext context = FlowContext.builder()
+                .input(Param.builder().name("userInput").value("给做作一首诗").build())
                 .build();
 
         // 顺序执行块
         // 现需要一个chain把他们串起来
-//        final boolean execute = SequentialWorkFlow.builder()
-//                .then(start)
-//                .then(llmNode)
-//                .then(end)
-//                .build()
-//                .execute(context);
-
-        final boolean execute = ParallelWorkFlow.builder()
-                .add(Lists.newArrayList(start, llmNode, end))
+        final boolean execute = SequentialWorkFlow.builder()
+                .then(start)
+                .then(llmNode)
+                .then(end)
                 .build()
                 .execute(context);
+
+//        final boolean execute = ParallelWorkFlow.builder()
+//                .add(Lists.newArrayList(start, llmNode, end))
+//                .build()
+//                .execute(context);
 
         log.info("execute:{},context:{}", execute, context);
 
