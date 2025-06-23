@@ -105,3 +105,6 @@ sink.onDispose(() -> System.out.println("资源已释放"));
                 }, // 处理错误
                 () -> System.out.println("流已结束"));
     }
+
+
+Flux的不可变性‌:Reactor中的Flux每次操作都会返回新实例，原Flux不会被修改。

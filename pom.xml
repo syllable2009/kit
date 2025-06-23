@@ -21,6 +21,7 @@
         <module>kit-hello</module>
         <module>kit-netty</module>
         <module>kit-flow</module>
+        <module>kit-open</module>
     </modules>
 
     <properties>

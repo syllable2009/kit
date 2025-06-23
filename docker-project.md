@@ -77,12 +77,29 @@ docker run --name mysql8 -v /Users/jxp/docker/mysql8/conf:/etc/mysql/conf.d \
 -v /Users/jxp/docker/mysql8/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=admin123456 -p 3306:3306 -d 
 mysql:8
 
+docker run -d \
+--name mysql8 \
+-p 3306:3306 \
+-e MYSQL_ROOT_PASSWORD=admin123456 \
+-e MYSQL_DATABASE=test \
+-e MYSQL_CHARSET=utf8mb4 \
+-e MYSQL_COLLATION=utf8mb4_unicode_ci \
+--restart unless-stopped \
+mysql:8.0 \
+--character-set-server=utf8mb4 \
+--collation-server=utf8mb4_unicode_ci \
+--bind-address=0.0.0.0
+
+
+
 CREATE USER 'root'@'%' IDENTIFIED BY 'admin123456'; 创建一个新的 root 用户
 ALTER USER 'root'@'%' IDENTIFIED BY 'admin123456';           -- 修改任何 IP 用户的密码
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;           -- 任何 IP
 FLUSH PRIVILEGES;  -- 刷新权限
 
 CREATE DATABASE erupt CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
 
 # CloudBeaver 是一个基于Web的数据库管理工具
 docker run -d \
@@ -234,6 +251,34 @@ https://www.erupt.xyz/#!/doc
 # kkFileView是一个万能的在线预览开源项目
 
 # MinIO
+mkdir -p /minio/{data,config} && chmod -R 755 /minio
+docker pull minio/minio:RELEASE.2025-04-22T22-12-26Z
+// 最后一个完整功能版本‌
+docker run -d \
+--name minio \
+--restart=always \
+-p 9000:9000 \
+-p 9001:9001 \
+-v /Users/jiaxiaopeng/docker/minio/data:/data \
+-v /Users/jiaxiaopeng:/d \
+-v /Users/jiaxiaopeng/docker/minio/config:/root/.minio \
+-e "MINIO_ROOT_USER=admin" \
+-e "MINIO_ROOT_PASSWORD=Jiaxiaopeng@StrongPassword123" \
+-e "TZ=Asia/Shanghai" \
+-e "MINIO_BROWSER=on" \
+minio/minio:RELEASE.2025-04-22T22-12-26Z \
+server /data \
+--console-address ":9001"
+
+
+docker run -d \
+-p 9000:9000 \
+-p 9001:9001 \
+--name minio1 \
+-v /home/minio/data:/data \
+-e "MINIO_ROOT_USER=admin" \
+-e "MINIO_ROOT_PASSWORD=admin" \
+minio/minio server /data --console-address ":9001"
 
 # r-nacos是一款使用rust实现的nacos服务
 https://github.com/nacos-group/r-nacos
@@ -420,6 +465,8 @@ docker run --rm -d --name torrserver -v ~/ts:/opt/ts -p 8090:8090 ghcr.io/yourok
 https://lucky666.cn/
 https://github.com/gdy666/lucky?tab=readme-ov-file#docker%E4%B8%AD%E4%BD%BF%E7%94%A8
 docker run -d --name lucky --restart=always -p 16601:16601 gdy666/lucky
+
+docker run -d --name lucky --restart=always --net=host -p 16601:16601 -v /Users/jiaxiaopeng/docker/lucky/config:/goodluck gdy666/lucky
 
 
 # 开源的无损音乐库playlistdl

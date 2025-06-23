@@ -36,6 +36,7 @@ public class MainTest {
 
         final LLMNode llmNode = LLMNode.builder().build();
 
+        org.springframework.mock.web.MockMultipartFile file;
 //        final NodeResult execute = workflow.execute(FlowContext.builder().build());
 //        final NodeState state = execute.getState();
 //        final FlowContext workContext = execute.getNodeContext();
