@@ -162,11 +162,9 @@ docker.elastic.co/kibana/kibana:8.18.1
 docker run -it -d \
 -p 7700:7700 \
 -v /Users/jiaxiaopeng/docker/meili/data:/meili_data \
---network mynet \
--e MEILI_NO_ANALYTICS=true \
 -e MEILI_MASTER_KEY=R5T5WDon_QrPqhFK97NgGlTVa81iuVlN44TMLiClTTg \
 --name meili \
-getmeili/meilisearch:v1.14
+getmeili/meilisearch:v1.15
 
 # kibana
 docker run -d \
@@ -270,15 +268,25 @@ minio/minio:RELEASE.2025-04-22T22-12-26Z \
 server /data \
 --console-address ":9001"
 
-
+// 最后一个文件系统存储的版本,可通过域名+localhost:9000/pictures/11.jpg直接访问
 docker run -d \
+--name minio \
 -p 9000:9000 \
 -p 9001:9001 \
---name minio1 \
--v /home/minio/data:/data \
--e "MINIO_ROOT_USER=admin" \
--e "MINIO_ROOT_PASSWORD=admin" \
-minio/minio server /data --console-address ":9001"
+--restart=always \
+-v /Users/jiaxiaopeng/docker/minio/data:/data \
+-v /Users:/home \
+-e "MINIO_ACCESS_KEY=myminioadmin" \
+-e "MINIO_SECRET_KEY=myminioadmin" \
+minio/minio:RELEASE.2022-05-26T05-48-41Z \
+server /data \
+--console-address ":9001"
+
+
+
+# rustfs
+https://github.com/rustfs
+run -d -p 9000:9000 -p 9001:9001 -v /Users/jiaxiaopeng/docker/rustfs/data:/data quay.io/rustfs/rustfs
 
 # r-nacos是一款使用rust实现的nacos服务
 https://github.com/nacos-group/r-nacos

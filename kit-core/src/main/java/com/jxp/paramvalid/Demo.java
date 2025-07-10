@@ -12,6 +12,8 @@ import lombok.Data;
 public class Demo {
 
     public static void main(String[] args) {
+
+        System.out.println(java.util.concurrent.TimeUnit.MINUTES.toMillis(10));
         // 要验证的内容
         String str = "abc";
         // build会导致初始化失效

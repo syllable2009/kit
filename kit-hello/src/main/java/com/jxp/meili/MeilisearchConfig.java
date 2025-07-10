@@ -38,7 +38,7 @@ public class MeilisearchConfig {
 
     @Bean
     public Client searchClient(JacksonJsonHandler jsonHandler) {
-        return new Client(new Config(MEILISEARCH_HOST, null, jsonHandler));
+        return new Client(new Config(MEILISEARCH_HOST, "R5T5WDon_QrPqhFK97NgGlTVa81iuVlN44TMLiClTTg", jsonHandler));
     }
 
 

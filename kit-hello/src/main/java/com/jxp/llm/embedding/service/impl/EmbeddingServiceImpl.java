@@ -5,12 +5,15 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.hankcs.hanlp.HanLP;
+import com.hankcs.hanlp.mining.word.TfIdfCounter;
 import com.hankcs.hanlp.mining.word2vec.Vector;
 import com.hankcs.hanlp.mining.word2vec.WordVectorModel;
 import com.jxp.llm.embedding.dto.EmbeddingWordResult;
 import com.jxp.llm.embedding.dto.EmbeddingWordsResult;
 import com.jxp.llm.embedding.service.EmbeddingService;
 
+import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,5 +52,28 @@ public class EmbeddingServiceImpl implements EmbeddingService {
     @Override
     public EmbeddingWordsResult words2Vec(List<String> words, Map<String, String> config) {
         return null;
+    }
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public static void main(String[] args) {
+        log.info("dimension:{}", wordVectorModel.dimension());
+        // 计算两个词语的语义距离
+        final float similarity = wordVectorModel.similarity("山东", "江苏");
+        log.info("similarity:{}", similarity);
+        // 找出与某个词语最相似的N个词语
+        System.out.println(wordVectorModel.nearest("山东", 10));
+
+        // 词向量->文档向量
+        String content = "我是中国人,我爱我的祖国,假如有人问是否会下雨，立刻回答不会";
+//        HanLP 提供的核心关键词提取方法
+        List<String> keywordList = HanLP.extractKeyword(content, 50);
+        System.out.println(keywordList);
+        final TfIdfCounter tfIdfCounter = new TfIdfCounter();
+        final List<String> keywords = tfIdfCounter.getKeywords(content, 50);
+        log.info("stringDoubleMap:{}", JSONUtil.toJsonStr(keywords));
+//        final Vector vector = wordVectorModel.vector();
+//        final float[] elementArray = vector.getElementArray();
+//        log.info("{}", elementArray.length);
+//        log.info("{}", king.getElementArray());
     }
 }

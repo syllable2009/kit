@@ -108,3 +108,9 @@ sink.onDispose(() -> System.out.println("资源已释放"));
 
 
 Flux的不可变性‌:Reactor中的Flux每次操作都会返回新实例，原Flux不会被修改。
+
+Flux的核心概念：
+发布者(Publisher)：数据源
+订阅者(Subscriber)：数据消费者
+操作符(Operators)：用于转换和处理数据流
+背压(Backpressure)：消费者控制生产者速率的能力‌5

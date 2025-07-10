@@ -4,23 +4,41 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
 /**
  * @author jiaxiaopeng
  * Created on 2025-06-12 21:55
  */
+@Slf4j
 public class FluxTest {
 
+    @SuppressWarnings({"checkstyle:WhitespaceAfter", "checkstyle:WhitespaceAround", "checkstyle:RegexpSingleline"})
     public static void main(String[] args) {
-        final Result result = stringFlux();
-        final Result result1 = str2(result);
 
-        result1.streamFlux.doOnComplete(() -> {
-                    System.out.println("******");
-                })
-                .doOnNext(e -> System.out.println(e))
-                .subscribe();
+        Flux<String> flux1 = Flux.just("A", "B", "C")
+                // 在每个元素被发布时执行指定操作（如日志记录、调试或状态检查），但不改变原始数据流
+                .doOnNext(e -> {
+                    log.info("send:{}", e);
+                });
+
+        // 真正的消费处理
+        flux1.subscribe(
+                line -> System.out.println("收到行: " + line),
+                error -> System.err.println("读取失败: " + error),
+                () -> System.out.println("文件读取完成")
+        );
+
+
+//        final Result result = stringFlux();
+//        final Result result1 = str2(result);
+//
+//        result1.streamFlux.doOnComplete(() -> {
+//                    System.out.println("******");
+//                })
+//                .doOnNext(e -> System.out.println(e))
+//                .subscribe();
     }
 
 
