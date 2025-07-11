@@ -67,10 +67,10 @@ lovechen/embyserver:4.7.14.0
 
 # redis
 docker run --name redis -d \
--e REDIS_PASSWORD=密码 \
+-e REDIS_PASSWORD=admin1234 \
 -p 6379:6379 \
-redis:7.2.6 --requirepass 密码
-docker exec -it redis redis-cli -a 密码
+redis:7.2.6 --requirepass admin1234
+docker exec -it redis redis-cli -a admin1234
 
 # mysql
 docker run --name mysql8 -v /Users/jxp/docker/mysql8/conf:/etc/mysql/conf.d \
@@ -242,6 +242,15 @@ docker pull ghcr.io/metatube-community/metatube-server:latest
 数据库模式(推荐)：
 docker run -d -p 8080:8080 -v $PWD/config:/config --name metatube ghcr.io/metatube-community/metatube-server:latest -dsn /config/metatube.db
 
+# exatorrent
+exatorrent 是用Go编写的优雅的BitTorrent客户端。
+https://github.com/varbhat/exatorrent?tab=readme-ov-file
+Adding Admin user with username "adminuser" and password "adminpassword"
+docker run -d --name exatorrent -p 9500:5000 -p 42069:42069 \
+-v /Users/jiaxiaopeng/docker/exatorrent:/exa/exadir \
+-e EXATORRENT_ADMIN_USER=adminuser \
+-e EXATORRENT_ADMIN_PASSWORD=adminpassword \
+ghcr.io/varbhat/exatorrent:latest
 
 # Erupt
 https://www.erupt.xyz/#!/doc

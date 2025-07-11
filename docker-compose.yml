@@ -1,0 +1,28 @@
+services:
+  cache:
+    image: redis:7.2.6
+    container_name: redis
+    restart: unless-stopped
+    ports: 
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=admin1234          
+  db:
+    image: mysql:8.0
+    container_name: mysql8
+    restart: unless-stopped
+    ports: 
+      - 3306:3306
+    volumes:
+      - /Users/jiaxiaopeng/docker/mysql8/data:/var/lib/mysql
+      - /Users/jiaxiaopeng/docker/mysql8/conf:/etc/mysql/conf.d
+    environment:
+      - MYSQL_ROOT_PASSWORD=admin123456
+      - MYSQL_DATABASE=kit
+      - MYSQL_USER=wordpress
+      - MYSQL_PASSWORD=wordpress
+    command:
+      - --default_authentication_plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci          
+      
