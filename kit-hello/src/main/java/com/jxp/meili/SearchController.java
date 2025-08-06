@@ -39,9 +39,6 @@ public class SearchController {
         return ResponseEntity.ok(searchClient.updateIndex(uid, primaryKey));
     }
 
-
-
-
     @Operation(summary = "one")
     @GetMapping("/one")
     public ResponseEntity one(@RequestParam String aid) {

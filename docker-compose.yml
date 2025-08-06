@@ -57,3 +57,52 @@ services:
       - "7478:7478"
     volumes:
       - /Users/jiaxiaopeng/Music:/data
+
+  pairdrop:
+    image: linuxserver/pairdrop:latest
+    container_name: pairdrop
+    restart: unless-stopped
+    ports:
+      - 3049:3000
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - WS_FALLBACK=true
+      - TZ=Asia/Shanghai
+
+  readeck:
+    image: codeberg.org/readeck/readeck:latest
+    container_name: readeck
+    restart: unless-stopped
+    ports:
+      - 8792:8000
+    volumes:
+      - ./data:/readeck
+
+  gohttpserver:
+    image: codeskyblue/gohttpserver
+    container_name: gohttpserver
+    restart: unless-stopped
+    ports:
+      - "7050:8000"
+    volumes:
+      - /Users/jiaxiaopeng/data:/app/public
+    command:
+      - --upload
+      - --delete
+      - --auth-type=http
+      - --auth-http=admin1234:admin1234
+
+  pigallery2:
+    image: bpatrik/pigallery2:latest
+    container_name: pigallery2
+    restart: always
+    ports:
+      - 8213:80
+    volumes:
+      - /你的路径/config:/app/data/config
+      - /你的路径/data:/app/data/db
+      - /你的路径/images:/app/data/images:ro
+      - /你的路径/tmp:/app/data/tmp
+    environment:
+      - NODE_ENV=production

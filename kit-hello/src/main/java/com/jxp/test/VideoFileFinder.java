@@ -1,13 +1,18 @@
 package com.jxp.test;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+
 import com.google.common.collect.Lists;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.file.FileNameUtil;
+import cn.hutool.core.io.unit.DataSizeUtil;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class VideoFileFinder {
 
     private static final List<String> VIDEO_EXTENSIONS = Lists.newArrayList("mp4", "avi", "mov", "mkv", "flv", "wmv",
-            "webm", "rmvb", "rm", "mpg", "mpeg", "vob", "ts", "3gp");
+            "webm", "rmvb", "rm", "mpg", "mpeg", "vob");
 
     public static void main(String[] args) {
         final Map<String, String> allMovie = getAllMovie("/Users/jiaxiaopeng/Downloads");
@@ -43,7 +48,9 @@ public class VideoFileFinder {
                 if (file.isDirectory()) {
                     traverseDirectory(file, videoFiles);
                 } else if (isVideoFile(file)) {
-                    log.info("find vedio,name:{},path:{}", file.getName(), file.getPath());
+                    long size = FileUtil.size(file);  // 字节数
+                    String humanSize = DataSizeUtil.format(size);
+                    log.info("find vedio,name:{},path:{},size:{}", file.getName(), file.getPath(), humanSize);
                     videoFiles.put(file.getName(), file.getPath());
                 }
             }
@@ -53,5 +60,19 @@ public class VideoFileFinder {
     private static boolean isVideoFile(File file) {
         final String ext = FileNameUtil.extName(file);
         return VIDEO_EXTENSIONS.contains(ext.toLowerCase());
+    }
+
+    private static String getResolution(File file) {
+        try {
+            // 图片尺寸（仅图片有效）
+            BufferedImage image = ImageIO.read(file);
+            if (image != null) {
+                System.out.println("分辨率: " + image.getWidth() + "x" + image.getHeight());
+                return image.getWidth() + "x" + image.getHeight();
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return null;
     }
 }
