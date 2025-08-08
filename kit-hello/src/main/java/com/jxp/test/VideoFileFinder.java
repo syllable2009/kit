@@ -75,4 +75,6 @@ public class VideoFileFinder {
         }
         return null;
     }
+
+    // 文件必须是三层或四层结构 90->张三->101->1.mp4
 }
