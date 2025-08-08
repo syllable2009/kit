@@ -1,5 +1,6 @@
 networks:
   mynet:
+    name: mynet
     driver: bridge
 services:
   file:
