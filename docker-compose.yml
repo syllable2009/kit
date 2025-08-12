@@ -128,3 +128,19 @@ services:
       - /你的路径/tmp:/app/data/tmp
     environment:
       - NODE_ENV=production
+
+# docker pull --platform=linux/arm64 rustfs/rustfs:latest
+# pigallery2可以和低版本的minio结合使用，一个用于专业存储提供url分享，一个用于搜索
+# 二进制存储可采用rustfs，也可以分享，但是源文件不可见。
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs
+    ports:
+      - "9000:9000"
+    volumes:
+      - "/mydata/rustfs/data:/data"
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      - RUSTFS_ACCESS_KEY=rustfsadmin
+      - RUSTFS_SECRET_KEY=rustfsadmin
+    restart: unless-stopped
