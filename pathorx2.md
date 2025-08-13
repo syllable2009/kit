@@ -16,3 +16,10 @@ https://rupu.net/
 https://play.cuse.eu.org/Cp0204-AppStore-Play-arm.zip
 
 https://casaos-appstore.paodayag.dev/linuxserver.zip
+
+# 检查系统是否支持npu vpu
+ls -l /dev | grep -E "mpp|rga|dri|dma_heap"
+
+# public key
+https://blog.csdn.net/ljnjava/article/details/148472856
+
