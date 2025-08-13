@@ -22,4 +22,5 @@ ls -l /dev | grep -E "mpp|rga|dri|dma_heap"
 
 # public key
 https://blog.csdn.net/ljnjava/article/details/148472856
+https://blog.csdn.net/flymyd/article/details/142058867
 
