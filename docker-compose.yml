@@ -1,3 +1,10 @@
+  docker network ls
+  docker network rm host
+  # 只能定义一个host的网络
+  docker network create --driver=host myhost
+
+
+
 networks:
   mynet:
     name: mynet
